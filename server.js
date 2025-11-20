@@ -15,7 +15,8 @@ const WEATHER_LON = Number.isFinite(parseFloat(process.env.WEATHER_LON))
   : -104.9903;
 const WEATHER_CACHE_MS = 15 * 60 * 1000;
 const MAP_TILE_URL =
-  process.env.MAP_TILE_URL || "/tiles/{z}/{x}/{y}.png"; // point to local tileserver/dir
+  process.env.MAP_TILE_URL ||
+  "http://127.0.0.1:8090/styles/bright/{z}/{x}/{y}.png"; // prefer local tileserver
 const MAP_TILE_ATTRIB =
   process.env.MAP_TILE_ATTRIB || "(local tiles - set MAP_TILE_ATTRIB)";
 const MAP_TILE_MAX_ZOOM = Number.isFinite(parseInt(process.env.MAP_TILE_MAX_ZOOM, 10))
@@ -28,7 +29,7 @@ const MAP_TILE_MAX_NATIVE_ZOOM = Number.isFinite(
   : MAP_TILE_MAX_ZOOM;
 const MAP_TILE_FALLBACK_URL =
   process.env.MAP_TILE_FALLBACK_URL ||
-  "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
+  "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"; // only used if local tiles fail
 const MAP_TILE_FALLBACK_ATTRIB =
   process.env.MAP_TILE_FALLBACK_ATTRIB || "(c) OpenStreetMap contributors";
 

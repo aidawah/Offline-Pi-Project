@@ -26,9 +26,9 @@ Leaflet is bundled locally. To keep full-quality maps without internet, point th
    - Docker: `docker run --rm -it -v $PWD/mapdata:/data -p 8090:8080 maptiler/tileserver-gl` (place `colorado.mbtiles` into `mapdata/`; the server exposes `/styles/` and `/data/`).
    - Or `mbtileserver`: `docker run --rm -it -v $PWD/mapdata:/data -p 8090:8000 ghcr.io/consbio/mbtileserver:latest /data`
 3) Set environment for this app to use the local tiles (examples):
-   - `MAP_TILE_URL=http://localhost:8090/styles/bright/{z}/{x}/{y}.png`
+   - `MAP_TILE_URL=http://127.0.0.1:8090/styles/bright/{z}/{x}/{y}.png` (default)
    - `MAP_TILE_ATTRIB="(local Colorado tiles)"`
-   - Optional fallback (when local tiles missing): `MAP_TILE_FALLBACK_URL=https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png`
+   - Optional fallback (when local tiles missing): `MAP_TILE_FALLBACK_URL=https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png` (default is OSM, used only if local fails)
    - Optional max zoom overrides: `MAP_TILE_MAX_ZOOM=17`, `MAP_TILE_MAX_NATIVE_ZOOM=17`
 
 Place raster tile folders under `public/tiles/{z}/{x}/{y}.png` if you prefer a simple directory instead of a tileserver; `MAP_TILE_URL=/tiles/{z}/{x}/{y}.png` will serve them directly.

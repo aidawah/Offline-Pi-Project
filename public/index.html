@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />
@@ -8,14 +8,14 @@
     <script src="/config.js"></script>
     <style>
       :root {
-        --bg: #020617;
-        --panel: #02091b;
-        --accent: #22d3ee;
-        --accent2: #a855f7;
-        --accent-warn: #facc15;
-        --accent-hot: #fb7185;
-        --text: #e5e7eb;
-        --muted: #9ca3af;
+        --bg: #0b1411;
+        --panel: rgba(12, 24, 18, 0.9);
+        --accent: #f97316;
+        --accent2: #7dd3a5;
+        --accent-warn: #fbbf24;
+        --accent-hot: #ef4444;
+        --text: #fdf8ee;
+        --muted: #cbd5c2;
       }
       * {
         box-sizing: border-box;
@@ -23,10 +23,8 @@
       body {
         margin: 0;
         min-height: 100vh;
-        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-          sans-serif;
-        background:
-          radial-gradient(circle at top, #1e293b, #020617 55%, #000 100%);
+        font-family: "Segoe UI", -apple-system, system-ui, sans-serif;
+        background: radial-gradient(circle at 16% 12%, #153022 0%, #0b1411 46%, #050807 100%);
         color: var(--text);
         display: flex;
         flex-direction: column;
@@ -114,6 +112,280 @@
         margin: 0.2rem 0;
         font-size: 0.95rem;
         color: var(--muted);
+      }
+
+      /* ---- CAMPFIRE HOME ---- */
+      .home-hero {
+        position: relative;
+        overflow: hidden;
+        border-radius: 1.5rem;
+        padding: clamp(1.4rem, 3vw, 2.1rem);
+        background:
+          linear-gradient(135deg, rgba(8, 16, 13, 0.86), rgba(9, 18, 14, 0.94)),
+          radial-gradient(circle at 22% 18%, rgba(249, 115, 22, 0.18), transparent 46%),
+          radial-gradient(circle at 82% 12%, rgba(34, 197, 94, 0.2), transparent 42%),
+          url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240' viewBox='0 0 240 240'%3E%3Crect width='240' height='240' fill='%230b1411'/%3E%3Cg fill='%23ffffff' opacity='0.05'%3E%3Ccircle cx='24' cy='16' r='1.4'/%3E%3Ccircle cx='96' cy='44' r='1'/%3E%3Ccircle cx='180' cy='30' r='1.2'/%3E%3Ccircle cx='140' cy='120' r='1'/%3E%3Ccircle cx='50' cy='110' r='1.2'/%3E%3Ccircle cx='200' cy='200' r='1.1'/%3E%3Ccircle cx='16' cy='200' r='1'/%3E%3Ccircle cx='120' cy='200' r='1.3'/%3E%3Ccircle cx='210' cy='120' r='1.1'/%3E%3Ccircle cx='80' cy='70' r='1'/%3E%3Ccircle cx='40' cy='150' r='1.1'/%3E%3C/g%3E%3C/svg%3E")
+            center/320px 320px repeat;
+        border: 1px solid rgba(249, 115, 22, 0.4);
+        box-shadow:
+          0 20px 48px rgba(0, 0, 0, 0.6),
+          0 0 0 1px rgba(124, 252, 170, 0.04);
+        display: grid;
+        grid-template-columns: minmax(0, 1.8fr) minmax(280px, 1fr);
+        gap: clamp(1rem, 3vw, 1.75rem);
+        align-items: start;
+      }
+      @media (max-width: 880px) {
+        .home-hero {
+          grid-template-columns: minmax(0, 1fr);
+        }
+      }
+      .hero-overlay {
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(circle at 12% 22%, rgba(126, 34, 206, 0.12), transparent 40%),
+          radial-gradient(circle at 86% 30%, rgba(34, 197, 94, 0.15), transparent 36%);
+        pointer-events: none;
+      }
+      .hero-body {
+        position: relative;
+        z-index: 1;
+        display: grid;
+        gap: 0.65rem;
+      }
+      .hero-eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.25rem 0.55rem;
+        border-radius: 999px;
+        background: rgba(125, 211, 165, 0.1);
+        border: 1px solid rgba(125, 211, 165, 0.4);
+        color: #bbf7d0;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        font-size: 0.72rem;
+      }
+      .hero-title {
+        font-family: "Georgia", "Times New Roman", serif;
+        font-size: clamp(1.55rem, 3vw, 2.1rem);
+        margin: 0;
+        color: #fff7ec;
+        text-shadow: 0 2px 16px rgba(0, 0, 0, 0.45);
+      }
+      .hero-lede {
+        margin: 0;
+        color: #e5e7dc;
+        line-height: 1.6;
+      }
+      .hero-badges {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.45rem;
+      }
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.45rem 0.75rem;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        background: rgba(0, 0, 0, 0.25);
+        color: #fff7ec;
+        font-size: 0.82rem;
+        backdrop-filter: blur(6px);
+      }
+      .pill .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 999px;
+        background: var(--accent);
+        box-shadow: 0 0 10px rgba(249, 115, 22, 0.8);
+      }
+      .pill.soft {
+        background: rgba(12, 24, 18, 0.75);
+        border-color: rgba(125, 211, 165, 0.4);
+        color: #d1fae5;
+      }
+      .hero-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        align-items: center;
+      }
+      .cta {
+        border: none;
+        border-radius: 0.85rem;
+        padding: 0.75rem 1.25rem;
+        cursor: pointer;
+        color: #0b0f0d;
+        background: linear-gradient(135deg, #fb923c, #ea580c);
+        box-shadow: 0 15px 36px rgba(249, 115, 22, 0.35);
+        font-weight: 700;
+        letter-spacing: 0.01em;
+      }
+      .cta.ghost {
+        background: rgba(12, 24, 18, 0.8);
+        color: #fff7ec;
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+      }
+      .cta:active {
+        transform: translateY(1px);
+      }
+      .hotspot-callout {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.6rem 0.85rem;
+        border-radius: 0.75rem;
+        background: rgba(11, 20, 17, 0.8);
+        border: 1px solid rgba(125, 211, 165, 0.3);
+        color: #d1fae5;
+      }
+      .hotspot-callout .dot {
+        width: 10px;
+        height: 10px;
+        background: #22c55e;
+        border-radius: 999px;
+        box-shadow: 0 0 12px rgba(34, 197, 94, 0.8);
+      }
+      .hero-sidecard {
+        position: relative;
+        z-index: 1;
+        background: rgba(6, 12, 10, 0.8);
+        backdrop-filter: blur(8px);
+        border-radius: 1.05rem;
+        padding: 1rem 1.1rem;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        box-shadow: 0 14px 34px rgba(0, 0, 0, 0.45);
+        display: grid;
+        gap: 0.7rem;
+      }
+      .card-heading {
+        font-size: 0.85rem;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+      .signal-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: grid;
+        gap: 0.5rem;
+      }
+      .signal {
+        display: flex;
+        align-items: center;
+        gap: 0.45rem;
+        font-weight: 600;
+        color: #fff7ec;
+      }
+      .signal .dot {
+        width: 9px;
+        height: 9px;
+        border-radius: 999px;
+        background: var(--accent);
+        box-shadow: 0 0 14px rgba(249, 115, 22, 0.65);
+      }
+      .signal small {
+        display: block;
+        color: var(--muted);
+        font-weight: 400;
+      }
+      .stat-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 0.5rem;
+      }
+      .stat-pill {
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 0.85rem;
+        padding: 0.7rem 0.8rem;
+        color: #fef7ec;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .home-grid {
+        margin-top: 1.3rem;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 1rem;
+      }
+      .home-panel {
+        position: relative;
+        background: linear-gradient(145deg, rgba(16, 28, 22, 0.92), rgba(10, 18, 15, 0.9));
+        border-radius: 1.1rem;
+        padding: 1.1rem;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45);
+      }
+      .panel-title {
+        margin: 0 0 0.35rem;
+        font-size: 1.05rem;
+        color: #fff7ec;
+        font-weight: 700;
+      }
+      .quick-steps {
+        list-style: none;
+        padding: 0;
+        margin: 0.5rem 0 0;
+        display: grid;
+        gap: 0.4rem;
+      }
+      .quick-steps li {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: 0.45rem;
+        align-items: start;
+        color: #e5e7dc;
+      }
+      .step-tag {
+        width: 24px;
+        height: 24px;
+        border-radius: 8px;
+        display: grid;
+        place-items: center;
+        background: rgba(249, 115, 22, 0.1);
+        border: 1px solid rgba(249, 115, 22, 0.4);
+        color: #fb923c;
+        font-weight: 700;
+        font-size: 0.82rem;
+      }
+      .mini-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 0.6rem;
+        margin-top: 0.6rem;
+      }
+      .mini-card {
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 0.85rem;
+        padding: 0.7rem 0.8rem;
+        color: #fff7ec;
+      }
+      .mini-card span {
+        display: block;
+        color: var(--muted);
+        font-size: 0.82rem;
+        margin-top: 0.25rem;
+      }
+      .home-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        color: #fef7ec;
+        text-decoration: none;
+        font-weight: 700;
+        margin-top: 0.4rem;
+      }
+      .home-link small {
+        color: var(--muted);
+        font-weight: 500;
       }
 
       /* ---- SYSTEM MANAGEMENT ---- */
@@ -745,20 +1017,148 @@
     <main>
       <!-- HOME VIEW -->
       <section id="view-home" class="view active">
-        <div class="card">
-          <h1>Welcome aboard 🚐</h1>
-          <p>
-            You’re connected to your Pi’s offline hotspot Beta. This is the basic
-            landing page.
-          </p>
-          <p>
-            Use the <strong>System</strong> tab for live temps and stats, and
-            the <strong>Networking</strong> tab to see hotspot + LAN info.
-          </p>
-          <p>
-            From your phone, connect to <strong>PiCarCam</strong> and open
-            <code>http://10.42.0.1:3000</code>.
-          </p>
+        <div class="home-hero">
+          <div class="hero-overlay"></div>
+          <div class="hero-body">
+            <span class="hero-eyebrow">
+              <span class="dot"></span>
+              Camp ready
+            </span>
+            <h1 class="hero-title">
+              Campfire-grade control for your mountain base.
+            </h1>
+            <p class="hero-lede">
+              Kick back by the fire while the Pi keeps watch. Monitor temps, map
+              the peaks, and call in weather updates without leaving the
+              campsite.
+            </p>
+            <div class="hero-badges">
+              <span class="pill"><span class="dot"></span>Offline hotspot</span>
+              <span class="pill soft">HD mountain map</span>
+              <span class="pill soft">Weather-aware</span>
+            </div>
+            <div class="hero-actions">
+              <button class="cta" data-nav-target="system">Open System View</button>
+              <button class="cta ghost" data-nav-target="map">Check Colorado Map</button>
+              <div class="hotspot-callout">
+                <div class="dot"></div>
+                <span>
+                  Connect to <strong>PiCarCam</strong> then visit
+                  <code>http://10.42.0.1:3000</code>
+                </span>
+              </div>
+            </div>
+          </div>
+          <div class="hero-sidecard">
+            <div class="card-heading">Tonight's basecamp</div>
+            <div class="signal">
+              <div class="dot"></div>
+              <div>
+                System stats
+                <small>Temp + load in the System tab.</small>
+              </div>
+            </div>
+            <div class="signal">
+              <div class="dot"></div>
+              <div>
+                Trail-ready map
+                <small>Colorado focus with quick jumps to parks & peaks.</small>
+              </div>
+            </div>
+            <div class="signal">
+              <div class="dot"></div>
+              <div>
+                Weather pulse
+                <small>Seven-day outlook before the hike.</small>
+              </div>
+            </div>
+            <div class="stat-row">
+              <div class="stat-pill">
+                Offline mode
+                <span style="color: var(--muted); font-size: 0.85rem">Hotspot on</span>
+              </div>
+              <div class="stat-pill">
+                Map lock
+                <span style="color: var(--muted); font-size: 0.85rem">Colorado</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="home-grid">
+          <div class="home-panel">
+            <div class="panel-title">How to connect</div>
+            <p>Keep everyone on the camp network in under a minute.</p>
+            <ul class="quick-steps">
+              <li>
+                <div class="step-tag">1</div>
+                <div>
+                  Join the Wi-Fi named <strong>PiCarCam</strong> from your phone or
+                  laptop.
+                </div>
+              </li>
+              <li>
+                <div class="step-tag">2</div>
+                <div>
+                  Open <code>http://10.42.0.1:3000</code> in the browser for this
+                  dashboard.
+                </div>
+              </li>
+              <li>
+                <div class="step-tag">3</div>
+                <div>
+                  Hop into <strong>System</strong> for temps, or
+                  <strong>Networking</strong> to see who's on the hotspot.
+                </div>
+              </li>
+            </ul>
+          </div>
+
+          <div class="home-panel">
+            <div class="panel-title">Quick launch</div>
+            <p>Jump straight to what you need around the fire.</p>
+            <div class="mini-grid">
+              <div class="mini-card">
+                System gauges
+                <span>CPU temp, load, memory, fan (if available).</span>
+              </div>
+              <div class="mini-card">
+                Colorado map
+                <span>Key towns, parks, and peaks with a topo toggle.</span>
+              </div>
+              <div class="mini-card">
+                Networking
+                <span>Hotspot clients and IP info at a glance.</span>
+              </div>
+              <div class="mini-card">
+                Weather outlook
+                <span>Seven-day forecast before you pack up.</span>
+              </div>
+            </div>
+            <a class="home-link" data-nav-target="weather" href="javascript:void(0)">
+              Check the week ahead
+              <small>Opens Weather</small>
+            </a>
+          </div>
+
+          <div class="home-panel">
+            <div class="panel-title">Camp vibe</div>
+            <p>Dial in the scene so the crew knows you're in mountain mode.</p>
+            <div class="mini-grid">
+              <div class="mini-card">
+                Beacon
+                <span>Keep the hotspot name visible: PiCarCam</span>
+              </div>
+              <div class="mini-card">
+                Safety
+                <span>Reboot from System tab if temps spike.</span>
+              </div>
+              <div class="mini-card">
+                Orientation
+                <span>Use Map quick jumps to land on your trailhead.</span>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -838,9 +1238,9 @@
                 ></div>
                 <div class="gauge-core">
                   <div class="gauge-main-value" id="center-value">--</div>
-                  <div class="gauge-main-label">SYSTEM TEMP °C</div>
+                  <div class="gauge-main-label">SYSTEM TEMP Â°C</div>
                   <div class="gauge-sub-row" id="center-sub">
-                    Waiting for data…
+                    Waiting for dataâ€¦
                   </div>
                 </div>
               </div>
@@ -860,7 +1260,7 @@
                   </div>
                   <div class="mini-gauge-text">
                     <div class="mini-gauge-label">CPU LOAD</div>
-                    <div id="mini-cpu-sub">Waiting…</div>
+                    <div id="mini-cpu-sub">Waitingâ€¦</div>
                   </div>
                 </div>
               </div>
@@ -877,7 +1277,7 @@
                   </div>
                   <div class="mini-gauge-text">
                     <div class="mini-gauge-label">MEMORY</div>
-                    <div id="mini-ram-sub">Waiting…</div>
+                    <div id="mini-ram-sub">Waitingâ€¦</div>
                   </div>
                 </div>
               </div>
@@ -895,7 +1295,7 @@
                   <div class="mini-gauge-text">
                     <div class="mini-gauge-label">FAN SPEED</div>
                     <div id="mini-fan-sub">
-                      If your fan exposes RPM, it’ll show up here.
+                      If your fan exposes RPM, itâ€™ll show up here.
                     </div>
                   </div>
                 </div>
@@ -906,7 +1306,7 @@
           <!-- reboot -->
           <div class="reboot-row">
             <button class="reboot-btn" id="rebootBtn">
-              <span>⭯</span>
+              <span>â­¯</span>
               <span>Reboot Device</span>
             </button>
             <div class="reboot-note">
@@ -956,7 +1356,7 @@
           <h1>Networking</h1>
           <p>
             View how your Pi is wired into the world: Ethernet LAN, hotspot
-            subnet, and who’s connected to <strong>PiCarCam</strong>.
+            subnet, and whoâ€™s connected to <strong>PiCarCam</strong>.
           </p>
 
           <div class="net-grid">
@@ -1009,6 +1409,7 @@
     <script>
       // -------- NAV / VIEWS --------
       const navBtns = document.querySelectorAll(".nav-btn");
+      const navTriggers = document.querySelectorAll("[data-nav-target]");
       const views = {
         home: document.getElementById("view-home"),
         map: document.getElementById("view-map"),
@@ -1017,21 +1418,33 @@
         network: document.getElementById("view-network"),
       };
 
+      function switchView(view) {
+        navBtns.forEach((b) => {
+          b.classList.toggle("active", b.dataset.view === view);
+        });
+
+        Object.entries(views).forEach(([key, el]) => {
+          el.classList.toggle("active", key === view);
+        });
+
+        if (view === "weather") {
+          updateWeather();
+        } else if (view === "map") {
+          ensureColoradoMap();
+          refreshMapSize();
+        }
+      }
+
       navBtns.forEach((btn) => {
-        btn.addEventListener("click", () => {
-          const view = btn.dataset.view;
-          navBtns.forEach((b) => b.classList.remove("active"));
-          btn.classList.add("active");
+        btn.addEventListener("click", () => switchView(btn.dataset.view));
+      });
 
-          Object.entries(views).forEach(([key, el]) => {
-            el.classList.toggle("active", key === view);
-          });
-
-          if (view === "weather") {
-            updateWeather();
-          } else if (view === "map") {
-            ensureColoradoMap();
-            refreshMapSize();
+      navTriggers.forEach((btn) => {
+        btn.addEventListener("click", (e) => {
+          e.preventDefault();
+          const view = btn.dataset.navTarget;
+          if (view) {
+            switchView(view);
           }
         });
       });
@@ -1163,21 +1576,27 @@
           worldCopyJump: true,
         });
 
-        tileLayers[activeLayer].addTo(coMap);
-        if (fallbackSource) {
-          tileLayers[activeLayer].on("tileerror", () => {
-            if (fallbackLayerAdded || !coMap) return;
-            fallbackLayerAdded = true;
-            const layer = L.tileLayer(fallbackSource.url, {
-              maxZoom: fallbackSource.maxZoom,
-              attribution: fallbackSource.attribution,
-            });
-            tileLayers.fallback = layer;
-            coMap.addLayer(layer);
-            activeLayer = "streets";
-            updateMapMeta("Using fallback tiles");
+        function addFallbackLayer() {
+          if (fallbackLayerAdded || !coMap || !fallbackSource) return;
+          fallbackLayerAdded = true;
+          const layer = L.tileLayer(fallbackSource.url, {
+            maxZoom: fallbackSource.maxZoom,
+            attribution: fallbackSource.attribution,
           });
+          tileLayers.fallback = layer;
+          coMap.addLayer(layer);
+          activeLayer = "streets";
+          updateMapMeta("Using fallback tiles");
         }
+
+        const watchForFallback = (layer) => {
+          if (!fallbackSource || !layer) return;
+          layer.on("tileerror", addFallbackLayer);
+        };
+
+        Object.values(tileLayers).forEach((layer) => watchForFallback(layer));
+
+        tileLayers[activeLayer].addTo(coMap);
         L.control.zoom({ position: "topright" }).addTo(coMap);
         L.control.scale({ position: "bottomleft", imperial: true, metric: true }).addTo(coMap);
 
@@ -1205,7 +1624,7 @@
         updateMapMeta("Centered on Colorado");
         if (mapTileNoteEl) {
           mapTileNoteEl.textContent =
-            "OpenStreetMap streets by default. Switch to topo for contours and relief.";
+            "Local tiles first (MAP_TILE_URL). Auto-fallback to online tiles only if local fails. Topo uses OpenTopoMap (needs internet).";
         }
         return coMap;
       }
@@ -1621,7 +2040,7 @@
             centerSubEl.textContent =
               "CPU: " +
               temp.toFixed(1) +
-              "°C · Uptime: " +
+              "Â°C Â· Uptime: " +
               formatUptime(uptime || 0);
 
             let color = "var(--accent)";
@@ -1689,7 +2108,7 @@
           } else {
             miniFanVal.textContent = "N/A";
             miniFanSub.textContent =
-              "No RPM sensor detected – this is normal on many fans.";
+              "No RPM sensor detected â€“ this is normal on many fans.";
             miniFanVal.style.fontSize = "1.1rem";
             setGauge("fan", 0, "var(--muted)");
           }
@@ -1714,14 +2133,14 @@
         if (!confirm("Are you sure you want to reboot the Pi?")) return;
 
         rebootBtn.disabled = true;
-        statusEl.textContent = "Sending reboot command…";
+        statusEl.textContent = "Sending reboot commandâ€¦";
 
         try {
           const res = await fetch("/api/reboot", { method: "POST" });
           const data = await res.json().catch(() => ({}));
           if (res.ok) {
             statusEl.textContent =
-              "Rebooting… hotspot will drop for a bit then come back.";
+              "Rebootingâ€¦ hotspot will drop for a bit then come back.";
           } else {
             statusEl.textContent =
               "Reboot failed: " + (data.error || "Unknown error");
@@ -1819,3 +2238,4 @@
     </script>
   </body>
 </html>
+
