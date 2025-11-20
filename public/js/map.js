@@ -278,37 +278,81 @@ export function initMap() {
   if (mapLocateBtn) {
     mapLocateBtn.addEventListener("click", () => {
       const map = ensureColoradoMap();
-      if (!map || !navigator.geolocation) {
-        if (mapMetaEl) {
-          mapMetaEl.textContent = "Location not available in this browser.";
+      if (!map) return;
+      const allowGeo = window.isSecureContext || location.hostname === "localhost";
+
+      async function locateByIP() {
+        try {
+          const controller = new AbortController();
+          const timer = setTimeout(() => controller.abort(), 3500);
+          const res = await fetch("https://ipapi.co/json/", { signal: controller.signal });
+          clearTimeout(timer);
+          if (!res.ok) throw new Error("HTTP " + res.status);
+          const data = await res.json();
+          if (!data || data.latitude == null || data.longitude == null) {
+            throw new Error("No coordinates returned");
+          }
+          return {
+            coords: [Number(data.latitude), Number(data.longitude)],
+            label: [data.city, data.region, data.country_name].filter(Boolean).join(", "),
+          };
+        } catch (err) {
+          return null;
         }
-        return;
       }
+
+      async function placeMarker(coords, label) {
+        if (locationMarker) {
+          locationMarker.setLatLng(coords);
+        } else {
+          locationMarker = L.circleMarker(coords, {
+            radius: 7,
+            color: "#22d3ee",
+            fillColor: "#22d3ee",
+            fillOpacity: 0.7,
+          }).addTo(map);
+        }
+        map.flyTo(coords, 12, { duration: 1 });
+        updateMapMeta(label ? "Pinned " + label : "Pinned your location");
+      }
+
+      const handleFailure = (msg) => {
+        if (mapMetaEl) {
+          mapMetaEl.textContent = msg;
+        }
+      };
+
       if (mapMetaEl) {
         mapMetaEl.textContent = "Locating...";
       }
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          const coords = [pos.coords.latitude, pos.coords.longitude];
-          if (locationMarker) {
-            locationMarker.setLatLng(coords);
+
+      const useBrowserGeo = navigator.geolocation && allowGeo;
+
+      if (useBrowserGeo) {
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            placeMarker([pos.coords.latitude, pos.coords.longitude]);
+          },
+          async (err) => {
+            const ipResult = await locateByIP();
+            if (ipResult) {
+              placeMarker(ipResult.coords, ipResult.label);
+            } else {
+              handleFailure("Location failed: " + err.message);
+            }
+          }
+        );
+      } else {
+        locateByIP().then((ipResult) => {
+          if (ipResult) {
+            placeMarker(ipResult.coords, ipResult.label);
           } else {
-            locationMarker = L.circleMarker(coords, {
-              radius: 7,
-              color: "#22d3ee",
-              fillColor: "#22d3ee",
-              fillOpacity: 0.7,
-            }).addTo(map);
+            handleFailure(
+              "Location blocked (browser needs HTTPS/localhost) and IP lookup failed."
+            );
           }
-          map.flyTo(coords, 12, { duration: 1 });
-          updateMapMeta("Pinned your location");
-        },
-        (err) => {
-          if (mapMetaEl) {
-            mapMetaEl.textContent = "Location failed: " + err.message;
-          }
-        }
-      );
+        });
+      }
     });
   }
 
