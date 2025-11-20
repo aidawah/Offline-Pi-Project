@@ -211,17 +211,26 @@ export function initWeather(isActive) {
       renderWeather(data.days);
 
       const locBits = [];
-      if (data.latitude != null) {
-        locBits.push("Lat " + Number(data.latitude).toFixed(2));
-        updateWeatherInputs(Number(data.latitude), Number(data.longitude), savedWeatherCoords?.name || "");
+      const latLabel =
+        data.latitude != null ? "Lat " + Number(data.latitude).toFixed(2) : null;
+      const lonLabel =
+        data.longitude != null ? "Lon " + Number(data.longitude).toFixed(2) : null;
+
+      if (data.latitude != null || data.longitude != null) {
+        updateWeatherInputs(
+          Number(data.latitude),
+          Number(data.longitude),
+          savedWeatherCoords?.name || ""
+        );
       }
-      if (data.longitude != null) {
-        locBits.push("Lon " + Number(data.longitude).toFixed(2));
-      }
+
+      if (latLabel) locBits.push(latLabel);
+      if (lonLabel) locBits.push(lonLabel);
       if (data.timezone) locBits.push(data.timezone);
+
+      const namePart = savedWeatherCoords && savedWeatherCoords.name;
       weatherLocation.textContent =
-        (savedWeatherCoords && savedWeatherCoords.name) ||
-        locBits.join(" | ") ||
+        [namePart, ...locBits.filter(Boolean)].filter(Boolean).join(" | ") ||
         "Forecast location";
 
       weatherStatus.textContent = "Updated " + new Date().toLocaleTimeString();
