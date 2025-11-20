@@ -16,9 +16,9 @@ body {
   min-height: 100vh;
   font-family: "Segoe UI", -apple-system, system-ui, sans-serif;
   background:
-    linear-gradient(180deg, rgba(5, 10, 8, 0.7), rgba(5, 8, 7, 0.95)),
-    radial-gradient(circle at 16% 12%, #153022 0%, #0b1411 46%, #050807 100%),
-    url("/vendor/leaflet/images/CO_Fall_Background.png") center/cover fixed;
+    url("/vendor/leaflet/images/CO_Fall_Background.png") center/cover fixed,
+    radial-gradient(circle at 16% 12%, rgba(21, 48, 34, 0.38) 0%, rgba(5, 8, 7, 0.7) 52%, rgba(5, 8, 7, 0.92) 100%),
+    linear-gradient(180deg, rgba(5, 10, 8, 0.38), rgba(5, 8, 7, 0.82));
   color: var(--text);
   display: flex;
   flex-direction: column;
