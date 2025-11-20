@@ -319,6 +319,7 @@ async function readHotspotClients() {
   const leasesByMac = new Map();
   const nowSec = Math.floor(Date.now() / 1000);
   const leaseGraceSec = 60; // allow brief grace after expiry to avoid flicker
+  const leaseDebug = [];
 
   function parseLeaseText(text) {
     const lines = text.split("\n");
@@ -348,20 +349,33 @@ async function readHotspotClients() {
   for (const file of leaseFiles) {
     if (!fs.existsSync(file)) continue;
     let text = null;
+    let readErr = null;
     try {
       text = fs.readFileSync(file, "utf8");
-    } catch (_) {}
+    } catch (err) {
+      readErr = err;
+    }
 
     // If direct read fails (permissions), try sudo -n cat
     if (!text) {
       try {
         const { stdout } = await execPromise(`sudo -n cat ${file}`);
         text = stdout;
-      } catch (_) {}
+        readErr = null;
+      } catch (err) {
+        readErr = err;
+      }
     }
 
     if (text) {
       parseLeaseText(text);
+      leaseDebug.push({ file, parsed: true });
+    } else {
+      leaseDebug.push({
+        file,
+        parsed: false,
+        error: readErr ? readErr.message || "read failed" : "no data",
+      });
     }
   }
 
@@ -378,6 +392,10 @@ async function readHotspotClients() {
   }
 
   if (stationMacs.size === 0) {
+    if (Date.now() - lastHotspotHostLog > 10000) {
+      lastHotspotHostLog = Date.now();
+      console.log("[hotspot] no associated stations; lease read summary", leaseDebug);
+    }
     return [];
   }
 
@@ -429,6 +447,7 @@ async function readHotspotClients() {
     console.log("[hotspot] missing hostnames", {
       missing: missingHosts,
       leases: Array.from(leasesByIp.entries()),
+      leaseDebug,
     });
   }
 
