@@ -10,6 +10,11 @@ Restart=on-failure
 RestartSec=5
 User=admin
 Environment=NODE_ENV=production
+Environment=MAP_TILE_URL=http://127.0.0.1:8090/styles/bright/{z}/{x}/{y}.png
+Environment=MAP_TILE_ATTRIB=(local Colorado tiles)
+Environment=MAP_TILE_FALLBACK_URL=https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png
+Environment=MAP_TILE_MAX_ZOOM=17
+Environment=MAP_TILE_MAX_NATIVE_ZOOM=17
 # If you use nvm or non-system node, adjust ExecStart accordingly.
 
 [Install]

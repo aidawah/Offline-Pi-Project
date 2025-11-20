@@ -5,6 +5,7 @@
     <title>Pi Control</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="stylesheet" href="/vendor/leaflet/leaflet.css" />
+    <script src="/config.js"></script>
     <style>
       :root {
         --bg: #020617;
@@ -1069,11 +1070,32 @@
         { name: "Crested Butte", coords: [38.8697, -106.9878], zoom: 13, blurb: "Gothic & flowers" },
       ];
 
+      const tileConfig = (window.PICO_CONFIG && window.PICO_CONFIG.tiles) || {};
+      const streetSource = {
+        url:
+          tileConfig.url ||
+          "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+        attribution:
+          tileConfig.attribution || "(c) OpenStreetMap contributors",
+        maxZoom: tileConfig.maxZoom || 19,
+        maxNativeZoom: tileConfig.maxNativeZoom || tileConfig.maxZoom || 19,
+      };
+      const fallbackSource = tileConfig.fallbackUrl
+        ? {
+            url: tileConfig.fallbackUrl,
+            attribution:
+              tileConfig.fallbackAttribution ||
+              "(c) OpenStreetMap contributors",
+            maxZoom: tileConfig.maxZoom || 19,
+          }
+        : null;
+
       let coMap = null;
       let tileLayers = null;
       let activeLayer = "streets";
       let locationMarker = null;
       let mapSizeTimer = null;
+      let fallbackLayerAdded = false;
 
       function refreshMapSize() {
         if (!coMap) return;
@@ -1123,9 +1145,10 @@
         }
 
         tileLayers = {
-          streets: L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-            maxZoom: 19,
-            attribution: "(c) OpenStreetMap contributors",
+          streets: L.tileLayer(streetSource.url, {
+            maxZoom: streetSource.maxZoom,
+            maxNativeZoom: streetSource.maxNativeZoom,
+            attribution: streetSource.attribution,
           }),
           topo: L.tileLayer("https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png", {
             maxZoom: 16,
@@ -1141,6 +1164,20 @@
         });
 
         tileLayers[activeLayer].addTo(coMap);
+        if (fallbackSource) {
+          tileLayers[activeLayer].on("tileerror", () => {
+            if (fallbackLayerAdded || !coMap) return;
+            fallbackLayerAdded = true;
+            const layer = L.tileLayer(fallbackSource.url, {
+              maxZoom: fallbackSource.maxZoom,
+              attribution: fallbackSource.attribution,
+            });
+            tileLayers.fallback = layer;
+            coMap.addLayer(layer);
+            activeLayer = "streets";
+            updateMapMeta("Using fallback tiles");
+          });
+        }
         L.control.zoom({ position: "topright" }).addTo(coMap);
         L.control.scale({ position: "bottomleft", imperial: true, metric: true }).addTo(coMap);
 

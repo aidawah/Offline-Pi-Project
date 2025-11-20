@@ -1,0 +1,20 @@
+[Unit]
+Description=TileServer-GL (Colorado MBTiles)
+After=network-online.target docker.service
+Wants=network-online.target docker.service
+
+[Service]
+Type=simple
+User=admin
+WorkingDirectory=/home/admin/pi-control
+ExecStart=/usr/bin/docker run --rm \
+  -v /home/admin/pi-control/mapdata:/data \
+  -p 8090:8080 \
+  --name tileserver-gl \
+  maptiler/tileserver-gl:v4.4.10
+ExecStop=/usr/bin/docker stop tileserver-gl
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

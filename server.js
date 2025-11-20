@@ -14,6 +14,23 @@ const WEATHER_LON = Number.isFinite(parseFloat(process.env.WEATHER_LON))
   ? parseFloat(process.env.WEATHER_LON)
   : -104.9903;
 const WEATHER_CACHE_MS = 15 * 60 * 1000;
+const MAP_TILE_URL =
+  process.env.MAP_TILE_URL || "/tiles/{z}/{x}/{y}.png"; // point to local tileserver/dir
+const MAP_TILE_ATTRIB =
+  process.env.MAP_TILE_ATTRIB || "(local tiles - set MAP_TILE_ATTRIB)";
+const MAP_TILE_MAX_ZOOM = Number.isFinite(parseInt(process.env.MAP_TILE_MAX_ZOOM, 10))
+  ? parseInt(process.env.MAP_TILE_MAX_ZOOM, 10)
+  : 17;
+const MAP_TILE_MAX_NATIVE_ZOOM = Number.isFinite(
+  parseInt(process.env.MAP_TILE_MAX_NATIVE_ZOOM, 10)
+)
+  ? parseInt(process.env.MAP_TILE_MAX_NATIVE_ZOOM, 10)
+  : MAP_TILE_MAX_ZOOM;
+const MAP_TILE_FALLBACK_URL =
+  process.env.MAP_TILE_FALLBACK_URL ||
+  "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
+const MAP_TILE_FALLBACK_ATTRIB =
+  process.env.MAP_TILE_FALLBACK_ATTRIB || "(c) OpenStreetMap contributors";
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
@@ -24,6 +41,23 @@ let weatherCache = {
   lon: WEATHER_LON,
   data: null,
 };
+
+// Expose minimal frontend config (tile source)
+app.get("/config.js", (req, res) => {
+  const config = {
+    tiles: {
+      url: MAP_TILE_URL,
+      attribution: MAP_TILE_ATTRIB,
+      maxZoom: MAP_TILE_MAX_ZOOM,
+      maxNativeZoom: MAP_TILE_MAX_NATIVE_ZOOM,
+      fallbackUrl: MAP_TILE_FALLBACK_URL,
+      fallbackAttribution: MAP_TILE_FALLBACK_ATTRIB,
+    },
+  };
+  res
+    .type("application/javascript")
+    .send("window.PICO_CONFIG=" + JSON.stringify(config) + ";");
+});
 
 // ---------- Helpers ----------
 function readCpuTemp() {
