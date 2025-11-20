@@ -95,6 +95,23 @@ Point `MAP_TILE_URL` at the served style/tiles. For plain raster folders, serve 
 - `WEATHER_LAT`, `WEATHER_LON`
 - Tile envs: `MAP_TILE_URL`, `MAP_TILE_ATTRIB`, `MAP_TILE_FALLBACK_URL`, `MAP_TILE_MAX_ZOOM`, `MAP_TILE_MAX_NATIVE_ZOOM`
 
+## Verify services and ports
+```bash
+# Service health
+sudo systemctl status pi-control
+sudo systemctl status tileserver    # if using the bundled tileserver
+
+# Listeners
+sudo lsof -i :3000                  # HTTP
+sudo lsof -i :3443                  # HTTPS
+sudo lsof -i :8090                  # tileserver (if used)
+
+# Smoke test
+curl -I http://localhost:3000/
+curl -k -I https://localhost:3443/
+curl -I http://localhost:8090/     # tileserver style endpoint (adjust if different)
+```
+
 ## Troubleshooting
 - Port in use: `sudo lsof -i :3000` (or 3443), then stop/kill the conflicting process.
 - TLS load fails: ensure the service user/group can read the key/cert (`chmod 640 key`, `chmod 644 cert`).
