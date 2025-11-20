@@ -374,6 +374,29 @@
             </div>
           </div>
 
+          <div class="weather-controls">
+            <div class="weather-inputs">
+              <input
+                class="weather-input"
+                id="weatherLatInput"
+                type="number"
+                step="0.0001"
+                placeholder="Latitude"
+              />
+              <input
+                class="weather-input"
+                id="weatherLonInput"
+                type="number"
+                step="0.0001"
+                placeholder="Longitude"
+              />
+            </div>
+            <div class="weather-actions">
+              <button class="map-btn" id="weatherSaveBtn">Use this location</button>
+              <button class="map-btn subtle" id="weatherRefreshBtn">Refresh now</button>
+            </div>
+          </div>
+
           <div class="weather-grid" id="weatherGrid"></div>
           <div class="weather-detail-overlay" id="weatherDetail">
             <div class="weather-detail-card" id="weatherDetailCard">

@@ -9,9 +9,42 @@ export function initWeather(isActive) {
   const detailSummary = document.getElementById("detailSummary");
   const detailPrecip = document.getElementById("detailPrecip");
   const detailGrid = document.getElementById("detailGrid");
+  const weatherLatInput = document.getElementById("weatherLatInput");
+  const weatherLonInput = document.getElementById("weatherLonInput");
+  const weatherSaveBtn = document.getElementById("weatherSaveBtn");
+  const weatherRefreshBtn = document.getElementById("weatherRefreshBtn");
 
   let lastWeatherFetch = 0;
   let lastWeatherDays = [];
+  const WEATHER_STORAGE_KEY = "picoWeatherLocation";
+  let savedWeatherCoords = loadSavedWeatherCoords();
+
+  function loadSavedWeatherCoords() {
+    try {
+      const raw = localStorage.getItem(WEATHER_STORAGE_KEY);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      if (
+        parsed &&
+        Number.isFinite(Number(parsed.lat)) &&
+        Number.isFinite(Number(parsed.lon))
+      ) {
+        return { lat: Number(parsed.lat), lon: Number(parsed.lon) };
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  function saveWeatherCoords(lat, lon) {
+    savedWeatherCoords = { lat, lon };
+    localStorage.setItem(WEATHER_STORAGE_KEY, JSON.stringify(savedWeatherCoords));
+    updateWeatherInputs(lat, lon);
+  }
+
+  function updateWeatherInputs(lat, lon) {
+    if (weatherLatInput && Number.isFinite(lat)) weatherLatInput.value = lat;
+    if (weatherLonInput && Number.isFinite(lon)) weatherLonInput.value = lon;
+  }
 
   function weatherCodeMeta(code) {
     const numeric = Number(code);
@@ -147,15 +180,24 @@ export function initWeather(isActive) {
     });
   }
 
-  async function updateWeather() {
+  async function updateWeather(force = false) {
     if (!isActive()) return;
     const now = Date.now();
-    if (now - lastWeatherFetch < 60000 && weatherGrid.children.length) {
+    const lat = weatherLatInput ? parseFloat(weatherLatInput.value) : null;
+    const lon = weatherLonInput ? parseFloat(weatherLonInput.value) : null;
+    const validLat = Number.isFinite(lat) ? lat : savedWeatherCoords?.lat;
+    const validLon = Number.isFinite(lon) ? lon : savedWeatherCoords?.lon;
+
+    if (!force && now - lastWeatherFetch < 60000 && weatherGrid.children.length) {
       return;
     }
     weatherStatus.textContent = "Loading forecast...";
     try {
-      const res = await fetch("/api/weather");
+      const qs =
+        Number.isFinite(validLat) && Number.isFinite(validLon)
+          ? `?lat=${validLat}&lon=${validLon}`
+          : "";
+      const res = await fetch("/api/weather" + qs);
       if (!res.ok) throw new Error("HTTP " + res.status);
       const data = await res.json();
       if (!data || !Array.isArray(data.days)) {
@@ -166,8 +208,13 @@ export function initWeather(isActive) {
       renderWeather(data.days);
 
       const locBits = [];
-      if (data.latitude != null) locBits.push("Lat " + Number(data.latitude).toFixed(2));
-      if (data.longitude != null) locBits.push("Lon " + Number(data.longitude).toFixed(2));
+      if (data.latitude != null) {
+        locBits.push("Lat " + Number(data.latitude).toFixed(2));
+        updateWeatherInputs(Number(data.latitude), Number(data.longitude));
+      }
+      if (data.longitude != null) {
+        locBits.push("Lon " + Number(data.longitude).toFixed(2));
+      }
       if (data.timezone) locBits.push(data.timezone);
       weatherLocation.textContent = locBits.join(" | ") || "Forecast location";
 
@@ -192,6 +239,29 @@ export function initWeather(isActive) {
       updateWeather();
     }
   }, 15 * 60 * 1000);
+
+  if (weatherSaveBtn) {
+    weatherSaveBtn.addEventListener("click", () => {
+      const lat = weatherLatInput ? parseFloat(weatherLatInput.value) : null;
+      const lon = weatherLonInput ? parseFloat(weatherLonInput.value) : null;
+      if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
+        weatherStatus.textContent = "Enter a valid latitude and longitude.";
+        return;
+      }
+      saveWeatherCoords(lat, lon);
+      updateWeather(true);
+    });
+  }
+
+  if (weatherRefreshBtn) {
+    weatherRefreshBtn.addEventListener("click", () => {
+      updateWeather(true);
+    });
+  }
+
+  if (savedWeatherCoords) {
+    updateWeatherInputs(savedWeatherCoords.lat, savedWeatherCoords.lon);
+  }
 
   return {
     refresh: updateWeather,

@@ -708,6 +708,35 @@ p {
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 0.9rem;
 }
+.weather-controls {
+  margin-top: 0.8rem;
+  display: grid;
+  gap: 0.5rem;
+}
+.weather-inputs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+.weather-input {
+  flex: 1 1 180px;
+  min-width: 140px;
+  border-radius: 0.65rem;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: #0f172a;
+  padding: 0.6rem 0.8rem;
+  color: var(--text);
+  font-size: 0.9rem;
+}
+.weather-input:focus {
+  outline: 1px solid var(--accent);
+  border-color: var(--accent);
+}
+.weather-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
 .weather-day {
   position: relative;
   padding: 1rem;
