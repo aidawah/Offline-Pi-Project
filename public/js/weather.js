@@ -237,16 +237,17 @@ export function initWeather(isActive) {
 
       if (latLabel) locBits.push(latLabel);
       if (lonLabel) locBits.push(lonLabel);
-      if (data.timezone) locBits.push(data.timezone);
 
       const inputName = weatherNameInput ? weatherNameInput.value.trim() : "";
       const namePart =
         inputName ||
         (savedWeatherCoords && savedWeatherCoords.name) ||
         DEFAULT_WEATHER.name;
-      weatherLocation.textContent =
-        [namePart, ...locBits.filter(Boolean)].filter(Boolean).join(" | ") ||
-        "Forecast location";
+
+      if (namePart) locBits.push(namePart);
+      if (data.timezone) locBits.push(data.timezone);
+
+      weatherLocation.textContent = locBits.filter(Boolean).join(" | ") || "Forecast location";
 
       weatherStatus.textContent = "Updated " + new Date().toLocaleTimeString();
       lastWeatherFetch = now;
