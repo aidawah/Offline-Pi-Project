@@ -61,6 +61,7 @@ export function initMap() {
   let fallbackLayerAdded = false;
   const CAMP_STORAGE_KEY = "picoCampLocation";
   let savedCamp = loadCampLocation();
+  let geoTimeout = null;
 
   function updateCampStatus(msg) {
     if (campStatusEl) campStatusEl.textContent = msg;
@@ -137,6 +138,13 @@ export function initMap() {
     if (!savedCamp || !campLatInput || !campLonInput) return;
     campLatInput.value = savedCamp.coords[0];
     campLonInput.value = savedCamp.coords[1];
+  }
+
+  function syncInputsToCenter() {
+    if (!coMap || !campLatInput || !campLonInput) return;
+    const center = coMap.getCenter();
+    campLatInput.value = center.lat.toFixed(6);
+    campLonInput.value = center.lng.toFixed(6);
   }
 
   function refreshMapSize() {
@@ -248,9 +256,13 @@ export function initMap() {
     });
 
     buildQuickLinks();
-    coMap.on("moveend zoomend", () => updateMapMeta());
+    coMap.on("moveend zoomend", () => {
+      updateMapMeta();
+      syncInputsToCenter();
+    });
     refreshMapSize();
     updateMapMeta("Centered on Colorado");
+    syncInputsToCenter();
     if (mapTileNoteEl) {
       mapTileNoteEl.textContent =
         "Local tiles first (MAP_TILE_URL). Auto-fallback to online tiles only if local fails. Topo uses OpenTopoMap (needs internet).";
@@ -363,6 +375,7 @@ export function initMap() {
   } else {
     updateCampStatus("No saved camp location.");
   }
+  syncInputsToCenter();
 
   if (mapLayerBtn) {
     mapLayerBtn.addEventListener("click", toggleLayer);
@@ -411,15 +424,21 @@ export function initMap() {
       if (mapMetaEl) {
         mapMetaEl.textContent = "Locating...";
       }
+      if (geoTimeout) clearTimeout(geoTimeout);
+      geoTimeout = setTimeout(() => {
+        handleFailure("Location timed out. Try saved spot or enter lat/lon.");
+      }, 8000);
 
       const useBrowserGeo = navigator.geolocation && allowGeo;
 
       if (useBrowserGeo) {
         navigator.geolocation.getCurrentPosition(
           (pos) => {
+            if (geoTimeout) clearTimeout(geoTimeout);
             placeMarker([pos.coords.latitude, pos.coords.longitude], "Pinned your location");
           },
           async (err) => {
+            if (geoTimeout) clearTimeout(geoTimeout);
             if (useSavedCamp()) return;
             const ipResult = await locateByIP();
             if (ipResult) {
@@ -432,9 +451,11 @@ export function initMap() {
       } else {
         locateByIP().then((ipResult) => {
           if (useSavedCamp()) {
+            if (geoTimeout) clearTimeout(geoTimeout);
             return;
           }
           if (ipResult) {
+            if (geoTimeout) clearTimeout(geoTimeout);
             placeMarker(ipResult.coords, ipResult.label);
           } else {
             handleFailure(
