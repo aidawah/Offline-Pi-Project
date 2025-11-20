@@ -227,7 +227,8 @@ function summarizeInterfaces(ipRouteText) {
 }
 
 function readHotspotClients() {
-  // Try a broad set of lease file locations (NetworkManager-dnsmasq or plain dnsmasq)
+  // Collect hostnames from dnsmasq lease files, but only show clients that are
+  // currently present in the ARP table on wlan0 to avoid long-lived stale entries.
   const knownFiles = [
     "/run/NetworkManager/dnsmasq-Hotspot.leases",
     "/run/nm-dnsmasq-Hotspot.leases",
@@ -235,8 +236,8 @@ function readHotspotClients() {
     "/var/lib/misc/dnsmasq.leases",
   ];
   const leaseDirs = ["/run/NetworkManager", "/var/lib/NetworkManager", "/run", "/var/lib/misc"];
-
   const leaseFiles = new Set(knownFiles);
+
   for (const dir of leaseDirs) {
     try {
       const entries = fs.readdirSync(dir, { withFileTypes: true });
@@ -248,14 +249,9 @@ function readHotspotClients() {
     } catch (_) {}
   }
 
-  const clientsByIp = new Map();
-
-  function upsertClient(ip, data) {
-    if (!ip) return;
-    const current = clientsByIp.get(ip) || {};
-    const merged = { ...current, ...data };
-    clientsByIp.set(ip, merged);
-  }
+  const leasesByIp = new Map();
+  const nowSec = Math.floor(Date.now() / 1000);
+  const leaseGraceSec = 60; // allow brief grace after expiry to avoid flicker
 
   function parseLeaseText(text) {
     const lines = text.split("\n");
@@ -263,21 +259,20 @@ function readHotspotClients() {
       const trimmed = line.trim();
       if (!trimmed) continue;
       const parts = trimmed.split(/\s+/);
+      if (parts.length < 3) continue;
 
-      let ip = parts[2] || null;
-      let mac = parts[1] || null;
-      let host = parts[3] || null;
+      const expiresRaw = parts[0];
+      const mac = parts[1];
+      const ip = parts[2];
+      const host = parts[3] && parts[3] !== "*" ? parts[3] : null;
+      const expires =
+        expiresRaw && /^\d+$/.test(expiresRaw) ? parseInt(expiresRaw, 10) : null;
 
-      // Fallback detection if the line is in an unexpected order
-      for (const p of parts) {
-        if (!ip && /^\d+\.\d+\.\d+\.\d+$/.test(p)) ip = p;
-        if (!mac && /^([0-9a-f]{2}:){5}[0-9a-f]{2}$/i.test(p)) mac = p;
-      }
+      // Skip leases that are clearly expired to avoid stale rows.
+      if (expires && expires > 0 && expires + leaseGraceSec < nowSec) continue;
+      if (!ip || !mac) continue;
 
-      if (host === "*" || host === "") host = null;
-      if (ip && mac) {
-        upsertClient(ip, { ip, mac, host });
-      }
+      leasesByIp.set(ip, { host, mac });
     }
   }
 
@@ -290,7 +285,7 @@ function readHotspotClients() {
     }
   }
 
-  // Fallback: ARP table on wlan0 (10.42.x.x clients)
+  const clients = [];
   try {
     const arpText = fs.readFileSync("/proc/net/arp", "utf8");
     const lines = arpText.split("\n").slice(1);
@@ -302,14 +297,24 @@ function readHotspotClients() {
         const ip = parts[0];
         const mac = parts[3];
         const dev = parts[5];
-        if (dev === "wlan0" && /^10\.42\./.test(ip)) {
-          upsertClient(ip, { ip, mac, host: clientsByIp.get(ip)?.host || null });
+        const flagsRaw = parts[2];
+        const flagsNum = parseInt(flagsRaw, 16) || 0;
+        const isComplete = (flagsNum & 0x2) !== 0;
+
+        if (dev === "wlan0" && /^10\.42\./.test(ip) && isComplete) {
+          if (!mac || mac === "00:00:00:00:00:00") continue;
+          const leaseInfo = leasesByIp.get(ip);
+          clients.push({
+            ip,
+            mac,
+            host: leaseInfo ? leaseInfo.host : null,
+          });
         }
       }
     }
   } catch (_) {}
 
-  return Array.from(clientsByIp.values());
+  return clients;
 }
 
 async function setEthState(action) {
