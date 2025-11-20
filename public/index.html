@@ -1039,6 +1039,7 @@
             updateWeather();
           } else if (view === "map") {
             ensureColoradoMap();
+            refreshMapSize();
           }
         });
       });
@@ -1081,6 +1082,15 @@
       let tileLayers = null;
       let activeLayer = "streets";
       let locationMarker = null;
+      let mapSizeTimer = null;
+
+      function refreshMapSize() {
+        if (!coMap) return;
+        if (mapSizeTimer) clearTimeout(mapSizeTimer);
+        mapSizeTimer = setTimeout(() => {
+          coMap.invalidateSize();
+        }, 80);
+      }
 
       function updateMapMeta(message) {
         if (!coMap || !mapMetaEl) return;
@@ -1115,7 +1125,8 @@
         if (coMap) return coMap;
         if (typeof L === "undefined") {
           if (mapMetaEl) {
-            mapMetaEl.textContent = "Map library failed to load.";
+            mapMetaEl.textContent =
+              "Map library failed to load - ensure Leaflet CDN is reachable or add it locally.";
           }
           return null;
         }
@@ -1162,6 +1173,7 @@
 
         buildQuickLinks();
         coMap.on("moveend zoomend", () => updateMapMeta());
+        refreshMapSize();
         updateMapMeta("Centered on Colorado");
         if (mapTileNoteEl) {
           mapTileNoteEl.textContent =
@@ -1321,6 +1333,7 @@
           hideSearchResults();
         }
       });
+      window.addEventListener("resize", refreshMapSize);
 
       // -------- WEATHER --------
       const weatherGrid = document.getElementById("weatherGrid");
