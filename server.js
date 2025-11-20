@@ -1,0 +1,234 @@
+const express = require("express");
+const { exec } = require("child_process");
+const path = require("path");
+const os = require("os");
+const fs = require("fs");
+
+const app = express();
+const PORT = 3000;
+
+app.use(express.json());
+app.use(express.static(path.join(__dirname, "public")));
+
+// ---------- Helpers ----------
+function readCpuTemp() {
+  try {
+    const raw = fs.readFileSync("/sys/class/thermal/thermal_zone0/temp", "utf8");
+    const milli = parseInt(raw.trim(), 10);
+    if (!Number.isNaN(milli)) return milli / 1000;
+  } catch (err) {
+    console.error("CPU temp read error:", err.message);
+  }
+  return null;
+}
+
+function readFanRpm() {
+  // Scan /sys/class/hwmon/*/fan1_input for RPM
+  try {
+    const hwmonRoot = "/sys/class/hwmon";
+    const entries = fs.readdirSync(hwmonRoot);
+    for (const entry of entries) {
+      const fanPath = path.join(hwmonRoot, entry, "fan1_input");
+      try {
+        const raw = fs.readFileSync(fanPath, "utf8");
+        const rpm = parseInt(raw.trim(), 10);
+        if (!Number.isNaN(rpm)) return rpm;
+      } catch (_) {}
+    }
+  } catch (_) {}
+
+  // Fallback: a couple of common platform paths
+  const candidates = [
+    "/sys/devices/platform/cooling_fan/hwmon/hwmon0/fan1_input",
+    "/sys/devices/platform/rpi_fan/hwmon/hwmon0/fan1_input",
+  ];
+  for (const p of candidates) {
+    try {
+      const raw = fs.readFileSync(p, "utf8");
+      const rpm = parseInt(raw.trim(), 10);
+      if (!Number.isNaN(rpm)) return rpm;
+    } catch (_) {}
+  }
+  return null;
+}
+
+function runCmd(cmd) {
+  return new Promise((resolve) => {
+    exec(cmd, { encoding: "utf8" }, (err, stdout) => {
+      if (err || !stdout) return resolve("");
+      resolve(stdout);
+    });
+  });
+}
+
+function summarizeInterfaces(ipRouteText) {
+  const ifacesRaw = os.networkInterfaces();
+
+  function summarizeOne(name, type) {
+    const info = {
+      name,
+    type,
+      ipv4: null,
+      ipv6: null,
+      mac: null,
+      gateway: null,
+      up: false,
+    };
+    const entries = ifacesRaw[name] || [];
+    for (const e of entries) {
+      if (e.family === "IPv4") {
+        info.ipv4 = e.address;
+        info.up = true;
+      } else if (e.family === "IPv6" && !e.internal) {
+        info.ipv6 = e.address;
+      }
+      if (e.mac && e.mac !== "00:00:00:00:00:00") {
+        info.mac = e.mac;
+      }
+    }
+
+    const lines = ipRouteText.split("\n");
+    for (const line of lines) {
+      if (line.startsWith("default ") && line.includes(" dev " + name + " ")) {
+        const parts = line.trim().split(/\s+/);
+        const viaIndex = parts.indexOf("via");
+        if (viaIndex >= 0 && parts[viaIndex + 1]) {
+          info.gateway = parts[viaIndex + 1];
+        }
+      }
+    }
+
+    return info;
+  }
+
+  return {
+    eth0: summarizeOne("eth0", "ethernet"),
+    wlan0: summarizeOne("wlan0", "wifi"),
+  };
+}
+
+function readHotspotClients() {
+  // Try a few likely lease file locations first
+  const candidates = [
+    "/run/NetworkManager/dnsmasq-Hotspot.leases",
+    "/run/nm-dnsmasq-Hotspot.leases",
+    "/var/lib/NetworkManager/dnsmasq-Hotspot.leases",
+  ];
+
+  let clients = [];
+
+  function parseLeaseText(text) {
+    const out = [];
+    const lines = text.split("\n");
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (!trimmed) continue;
+      const parts = trimmed.split(/\s+/);
+      let ip = null;
+      let mac = null;
+      let host = null;
+      for (const p of parts) {
+        if (!ip && /^\d+\.\d+\.\d+\.\d+$/.test(p)) ip = p;
+        else if (!mac && /^([0-9a-f]{2}:){5}[0-9a-f]{2}$/i.test(p)) mac = p;
+      }
+      if (parts.length >= 4) {
+        const candidateHost = parts[3];
+        if (candidateHost && candidateHost !== "*") host = candidateHost;
+      }
+      if (ip && mac) {
+        out.push({ ip, mac, host });
+      }
+    }
+    return out;
+  }
+
+  for (const file of candidates) {
+    if (fs.existsSync(file)) {
+      try {
+        const text = fs.readFileSync(file, "utf8");
+        clients = parseLeaseText(text);
+        if (clients.length > 0) return clients;
+      } catch (_) {}
+    }
+  }
+
+  // Fallback: ARP table on wlan0 (10.42.x.x clients)
+  try {
+    const arpText = fs.readFileSync("/proc/net/arp", "utf8");
+    const lines = arpText.split("\n").slice(1);
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (!trimmed) continue;
+      const parts = trimmed.split(/\s+/);
+      if (parts.length >= 6) {
+        const ip = parts[0];
+        const mac = parts[3];
+        const dev = parts[5];
+        if (dev === "wlan0" && /^10\.42\./.test(ip)) {
+          clients.push({ ip, mac, host: null });
+        }
+      }
+    }
+  } catch (_) {}
+
+  return clients;
+}
+
+// ---------- System stats API ----------
+app.get("/api/system-stats", (req, res) => {
+  const cpuTempC = readCpuTemp();
+  const load = os.loadavg()[0];
+  const totalMem = os.totalmem();
+  const freeMem = os.freemem();
+  const usedMem = totalMem - freeMem;
+  const uptime = os.uptime();
+  const fanRpm = readFanRpm();
+  const cores = os.cpus() ? os.cpus().length : null;
+
+  res.json({
+    cpuTempC,
+    load,
+    totalMem,
+    usedMem,
+    uptime,
+    fanRpm,
+    cores,
+  });
+});
+
+// ---------- Network info API ----------
+app.get("/api/network-info", async (req, res) => {
+  try {
+    const ipRoute = await runCmd("ip route");
+    const nmActive = await runCmd(
+      "nmcli -t -f NAME,DEVICE,TYPE,STATE connection show --active"
+    );
+
+    const interfaces = summarizeInterfaces(ipRoute);
+    const clients = readHotspotClients();
+
+    res.json({
+      interfaces,
+      nmActive,
+      clients,
+    });
+  } catch (err) {
+    console.error("Network info error:", err);
+    res.status(500).json({ error: "Failed to get network info" });
+  }
+});
+
+// ---------- Reboot API ----------
+app.post("/api/reboot", (req, res) => {
+  exec("sudo /sbin/reboot", (error) => {
+    if (error) {
+      console.error("Reboot error:", error.message);
+      return res.status(500).json({ error: error.message });
+    }
+    res.json({ message: "Rebooting..." });
+  });
+});
+
+app.listen(PORT, () => {
+  console.log(`Pi Control server listening on port ${PORT}`);
+});

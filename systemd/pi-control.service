@@ -1,0 +1,16 @@
+[Unit]
+Description=Pi Control Dashboard
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+WorkingDirectory=/home/admin/pi-control
+ExecStart=/usr/bin/node /home/admin/pi-control/server.js
+Restart=on-failure
+RestartSec=5
+User=admin
+Environment=NODE_ENV=production
+# If you use nvm or non-system node, adjust ExecStart accordingly.
+
+[Install]
+WantedBy=multi-user.target

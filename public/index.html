@@ -1,0 +1,859 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Pi Control</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      :root {
+        --bg: #020617;
+        --panel: #02091b;
+        --accent: #22d3ee;
+        --accent2: #a855f7;
+        --accent-warn: #facc15;
+        --accent-hot: #fb7185;
+        --text: #e5e7eb;
+        --muted: #9ca3af;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+          sans-serif;
+        background:
+          radial-gradient(circle at top, #1e293b, #020617 55%, #000 100%);
+        color: var(--text);
+        display: flex;
+        flex-direction: column;
+      }
+
+      /* Top nav */
+      header {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.5rem 1rem;
+        background: rgba(15, 23, 42, 0.9);
+        border-bottom: 1px solid #1f2937;
+        backdrop-filter: blur(18px);
+      }
+      .logo {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        font-size: 0.8rem;
+        color: var(--muted);
+      }
+      .logo-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 999px;
+        background: #22c55e;
+        box-shadow: 0 0 12px #22c55e;
+      }
+      nav {
+        display: flex;
+        gap: 0.5rem;
+      }
+      .nav-btn {
+        border: none;
+        background: transparent;
+        color: var(--muted);
+        padding: 0.4rem 0.9rem;
+        border-radius: 999px;
+        cursor: pointer;
+        font-size: 0.85rem;
+        transition: background 0.15s, color 0.15s, transform 0.08s;
+      }
+      .nav-btn.active {
+        background: #0f172a;
+        color: var(--text);
+      }
+      .nav-btn:active {
+        transform: scale(0.96);
+      }
+
+      main {
+        flex: 1;
+        padding: 1.5rem 1rem 2rem;
+        max-width: 980px;
+        margin: 0 auto;
+        width: 100%;
+      }
+
+      .view {
+        display: none;
+      }
+      .view.active {
+        display: block;
+      }
+
+      .card {
+        border-radius: 1.25rem;
+        padding: 1.5rem;
+        background: radial-gradient(circle at top left, #111827, #020617);
+        border: 1px solid rgba(148, 163, 184, 0.2);
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+      }
+
+      h1 {
+        margin: 0 0 0.5rem;
+        font-size: 1.4rem;
+      }
+      p {
+        margin: 0.2rem 0;
+        font-size: 0.95rem;
+        color: var(--muted);
+      }
+
+      /* ---- SYSTEM MANAGEMENT ---- */
+      .system-grid {
+        margin-top: 1.5rem;
+        display: grid;
+        grid-template-columns: minmax(0, 2fr) minmax(0, 1.5fr);
+        gap: 1.5rem;
+      }
+      @media (max-width: 800px) {
+        .system-grid {
+          grid-template-columns: minmax(0, 1fr);
+        }
+      }
+
+      .center-panel {
+        position: relative;
+        background: radial-gradient(circle at top, #020617, #000814);
+        border-radius: 1.25rem;
+        padding: 1.25rem;
+        border: 1px solid rgba(56, 189, 248, 0.3);
+        box-shadow:
+          0 0 30px rgba(56, 189, 248, 0.25),
+          0 0 80px rgba(37, 99, 235, 0.25);
+        overflow: hidden;
+      }
+      .center-panel::before {
+        content: "";
+        position: absolute;
+        inset: -40%;
+        background:
+          radial-gradient(circle at 0 0, rgba(56, 189, 248, 0.15), transparent),
+          radial-gradient(circle at 100% 0, rgba(168, 85, 247, 0.15), transparent);
+        opacity: 0.75;
+        pointer-events: none;
+      }
+
+      .side-panel {
+        display: grid;
+        grid-template-rows: repeat(3, minmax(0, 1fr));
+        gap: 1rem;
+      }
+
+      .mini-panel {
+        position: relative;
+        background: radial-gradient(circle at top, #020617, #000814);
+        border-radius: 1.25rem;
+        padding: 1rem;
+        border: 1px solid rgba(168, 85, 247, 0.25);
+        box-shadow: 0 0 24px rgba(168, 85, 247, 0.25);
+      }
+      .mini-panel::before {
+        content: "";
+        position: absolute;
+        inset: -40%;
+        background: radial-gradient(circle at 0 0, rgba(168, 85, 247, 0.2), transparent);
+        opacity: 0.6;
+        pointer-events: none;
+      }
+
+      /* Big circular gauge */
+      .gauge-shell-main {
+        width: 230px;
+        height: 230px;
+        margin: 0 auto;
+        border-radius: 50%;
+        position: relative;
+        display: grid;
+        place-items: center;
+      }
+      .gauge-arc {
+        position: absolute;
+        inset: 0;
+        border-radius: 50%;
+        background:
+          conic-gradient(
+            from -90deg,
+            rgba(15, 23, 42, 0.7) 0deg,
+            rgba(15, 23, 42, 0.4) 200deg,
+            rgba(15, 23, 42, 0.7) 360deg
+          );
+        mask: radial-gradient(farthest-side, transparent 60%, #000 62%);
+      }
+      .gauge-arc-fill {
+        --value: 0;
+        --accent-color: var(--accent);
+        position: absolute;
+        inset: 0;
+        border-radius: 50%;
+        background:
+          conic-gradient(
+            from -90deg,
+            var(--accent-color) calc(var(--value) * 1%),
+            transparent 0
+          );
+        mask: radial-gradient(farthest-side, transparent 60%, #000 62%);
+        filter: drop-shadow(0 0 12px rgba(56, 189, 248, 0.65));
+        transition: all 0.3s ease-out;
+      }
+      .gauge-core {
+        position: relative;
+        text-align: center;
+        z-index: 1;
+      }
+      .gauge-main-value {
+        font-size: 2.6rem;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+      }
+      .gauge-main-label {
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.18em;
+        color: var(--muted);
+      }
+      .gauge-sub-row {
+        margin-top: 0.4rem;
+        font-size: 0.8rem;
+        color: var(--muted);
+      }
+
+      /* Mini round gauges */
+      .mini-gauge {
+        display: flex;
+        align-items: center;
+        gap: 0.9rem;
+      }
+      .mini-gauge-circle {
+        width: 78px;
+        height: 78px;
+        border-radius: 50%;
+        position: relative;
+        display: grid;
+        place-items: center;
+        background: radial-gradient(circle at 30% 0, #0f172a, #020617);
+        overflow: hidden;
+      }
+      .mini-gauge-arc {
+        --value: 0;
+        --accent-color: var(--accent2);
+        position: absolute;
+        inset: 0;
+        border-radius: 50%;
+        background:
+          conic-gradient(
+            from -90deg,
+            var(--accent-color) calc(var(--value) * 1%),
+            transparent 0
+          );
+        mask: radial-gradient(farthest-side, transparent 58%, #000 60%);
+        filter: drop-shadow(0 0 10px rgba(168, 85, 247, 0.7));
+        transition: all 0.3s ease-out;
+      }
+      .mini-gauge-value {
+        position: relative;
+        font-size: 1.1rem;
+        font-weight: 600;
+      }
+      .mini-gauge-text {
+        font-size: 0.8rem;
+      }
+      .mini-gauge-label {
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        font-size: 0.7rem;
+      }
+
+      /* Reboot + status */
+      .reboot-row {
+        margin-top: 1.4rem;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.8rem;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .reboot-btn {
+        border: none;
+        border-radius: 999px;
+        padding: 0.7rem 1.4rem;
+        font-size: 0.95rem;
+        cursor: pointer;
+        background: linear-gradient(135deg, #ef4444, #b91c1c);
+        color: #fee2e2;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        box-shadow: 0 12px 30px rgba(248, 113, 113, 0.35);
+      }
+      .reboot-btn:disabled {
+        opacity: 0.5;
+        box-shadow: none;
+        cursor: wait;
+      }
+      .reboot-note {
+        font-size: 0.8rem;
+        color: var(--muted);
+      }
+      .status {
+        margin-top: 0.6rem;
+        font-size: 0.8rem;
+        color: var(--muted);
+      }
+
+      /* Networking layout */
+      .net-grid {
+        margin-top: 1.5rem;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 1rem;
+      }
+      .net-card {
+        background: radial-gradient(circle at top, #020617, #000814);
+        border-radius: 1rem;
+        padding: 1rem;
+        border: 1px solid rgba(148, 163, 184, 0.25);
+      }
+      .net-title {
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.14em;
+        color: var(--muted);
+        margin-bottom: 0.3rem;
+      }
+      .net-main {
+        font-size: 1.1rem;
+        font-variant-numeric: tabular-nums;
+      }
+      .net-sub {
+        font-size: 0.8rem;
+        color: var(--muted);
+        margin-top: 0.25rem;
+      }
+      .badge {
+        display: inline-block;
+        padding: 0.2rem 0.6rem;
+        border-radius: 999px;
+        font-size: 0.7rem;
+        background: rgba(34, 197, 94, 0.12);
+        color: #bbf7d0;
+        border: 1px solid rgba(22, 163, 74, 0.4);
+      }
+      .badge.offline {
+        background: rgba(248, 113, 113, 0.12);
+        color: #fecaca;
+        border-color: rgba(248, 113, 113, 0.5);
+      }
+
+      .clients-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 1rem;
+        font-size: 0.8rem;
+      }
+      .clients-table th,
+      .clients-table td {
+        padding: 0.35rem 0.5rem;
+        border-bottom: 1px solid rgba(30, 64, 175, 0.4);
+        font-variant-numeric: tabular-nums;
+      }
+      .clients-table th {
+        text-align: left;
+        color: var(--muted);
+        font-weight: 500;
+      }
+      .clients-empty {
+        margin-top: 0.8rem;
+        font-size: 0.8rem;
+        color: var(--muted);
+      }
+
+      code {
+        background: #020617;
+        padding: 0.12rem 0.35rem;
+        border-radius: 0.25rem;
+        font-size: 0.8rem;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="logo">
+        <div class="logo-dot"></div>
+        <span>Pi Car Control</span>
+      </div>
+      <nav>
+        <button class="nav-btn active" data-view="home">Home</button>
+        <button class="nav-btn" data-view="system">System</button>
+        <button class="nav-btn" data-view="network">Networking</button>
+      </nav>
+    </header>
+
+    <main>
+      <!-- HOME VIEW -->
+      <section id="view-home" class="view active">
+        <div class="card">
+          <h1>Welcome aboard 🚐</h1>
+          <p>
+            You’re connected to your Pi’s offline hotspot. This is the basic
+            landing page.
+          </p>
+          <p>
+            Use the <strong>System</strong> tab for live temps and stats, and
+            the <strong>Networking</strong> tab to see hotspot + LAN info.
+          </p>
+          <p>
+            From your phone, connect to <strong>PiCarCam</strong> and open
+            <code>http://10.42.0.1:3000</code>.
+          </p>
+        </div>
+      </section>
+
+      <!-- SYSTEM VIEW -->
+      <section id="view-system" class="view">
+        <div class="card">
+          <h1>System Management</h1>
+          <p>
+            Live MSI-Afterburner-style dashboard for your Pi. Gauges animate
+            based on CPU temp, load, memory and (if exposed) fan RPM.
+          </p>
+
+          <div class="system-grid">
+            <!-- big center gauge -->
+            <div class="center-panel">
+              <div class="gauge-shell-main">
+                <div class="gauge-arc"></div>
+                <div
+                  class="gauge-arc-fill"
+                  data-gauge="cpu-main"
+                ></div>
+                <div class="gauge-core">
+                  <div class="gauge-main-value" id="center-value">--</div>
+                  <div class="gauge-main-label">SYSTEM TEMP °C</div>
+                  <div class="gauge-sub-row" id="center-sub">
+                    Waiting for data…
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- side mini gauges -->
+            <div class="side-panel">
+              <!-- CPU LOAD -->
+              <div class="mini-panel">
+                <div class="mini-gauge">
+                  <div class="mini-gauge-circle">
+                    <div
+                      class="mini-gauge-arc"
+                      data-gauge="cpu-load"
+                    ></div>
+                    <div class="mini-gauge-value" id="mini-cpu">--%</div>
+                  </div>
+                  <div class="mini-gauge-text">
+                    <div class="mini-gauge-label">CPU LOAD</div>
+                    <div id="mini-cpu-sub">Waiting…</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- MEMORY -->
+              <div class="mini-panel">
+                <div class="mini-gauge">
+                  <div class="mini-gauge-circle">
+                    <div
+                      class="mini-gauge-arc"
+                      data-gauge="mem"
+                    ></div>
+                    <div class="mini-gauge-value" id="mini-ram">--%</div>
+                  </div>
+                  <div class="mini-gauge-text">
+                    <div class="mini-gauge-label">MEMORY</div>
+                    <div id="mini-ram-sub">Waiting…</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- FAN RPM -->
+              <div class="mini-panel">
+                <div class="mini-gauge">
+                  <div class="mini-gauge-circle">
+                    <div
+                      class="mini-gauge-arc"
+                      data-gauge="fan"
+                    ></div>
+                    <div class="mini-gauge-value" id="mini-fan">N/A</div>
+                  </div>
+                  <div class="mini-gauge-text">
+                    <div class="mini-gauge-label">FAN SPEED</div>
+                    <div id="mini-fan-sub">
+                      If your fan exposes RPM, it’ll show up here.
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- reboot -->
+          <div class="reboot-row">
+            <button class="reboot-btn" id="rebootBtn">
+              <span>⭯</span>
+              <span>Reboot Device</span>
+            </button>
+            <div class="reboot-note">
+              Sends a safe reboot to the Pi. The hotspot and this dashboard will
+              come back after a short pause.
+            </div>
+          </div>
+          <div class="status" id="status"></div>
+        </div>
+      </section>
+
+      <!-- NETWORKING VIEW -->
+      <section id="view-network" class="view">
+        <div class="card">
+          <h1>Networking</h1>
+          <p>
+            View how your Pi is wired into the world: Ethernet LAN, hotspot
+            subnet, and who’s connected to <strong>PiCarCam</strong>.
+          </p>
+
+          <div class="net-grid">
+            <div class="net-card">
+              <div class="net-title">Ethernet (eth0)</div>
+              <div class="net-main" id="eth-ip">IP: --</div>
+              <div class="net-sub" id="eth-gw">Gateway: --</div>
+              <div class="net-sub">
+                <span id="eth-status" class="badge offline">Offline</span>
+              </div>
+            </div>
+
+            <div class="net-card">
+              <div class="net-title">Hotspot (wlan0)</div>
+              <div class="net-main" id="wlan-ip">IP: --</div>
+              <div class="net-sub" id="wlan-gw">Gateway: --</div>
+              <div class="net-sub">
+                <span id="wlan-status" class="badge offline">Offline</span>
+              </div>
+            </div>
+          </div>
+
+          <h2 style="margin-top:1.5rem;font-size:1rem;">Connected Hotspot Clients</h2>
+          <p style="margin-top:0.2rem;font-size:0.85rem;color:var(--muted);">
+            Devices that have recently talked to the Pi on
+            <code>wlan0</code> (10.42.x.x).
+          </p>
+
+          <table class="clients-table" id="clientsTable">
+            <thead>
+              <tr>
+                <th>IP</th>
+                <th>MAC</th>
+                <th>Hostname</th>
+              </tr>
+            </thead>
+            <tbody id="clientsBody"></tbody>
+          </table>
+          <div class="clients-empty" id="clientsEmpty">
+            No hotspot clients detected yet. Connect your phone to
+            <strong>PiCarCam</strong> to see it listed here.
+          </div>
+
+          <div class="status" id="netStatus"></div>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      // -------- NAV / VIEWS --------
+      const navBtns = document.querySelectorAll(".nav-btn");
+      const views = {
+        home: document.getElementById("view-home"),
+        system: document.getElementById("view-system"),
+        network: document.getElementById("view-network"),
+      };
+
+      navBtns.forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const view = btn.dataset.view;
+          navBtns.forEach((b) => b.classList.remove("active"));
+          btn.classList.add("active");
+
+          Object.entries(views).forEach(([key, el]) => {
+            el.classList.toggle("active", key === view);
+          });
+        });
+      });
+
+      // -------- GAUGE / STATS --------
+      const gaugeRings = {
+        cpuMain: document.querySelector('[data-gauge="cpu-main"]'),
+        cpuLoad: document.querySelector('[data-gauge="cpu-load"]'),
+        mem: document.querySelector('[data-gauge="mem"]'),
+        fan: document.querySelector('[data-gauge="fan"]'),
+      };
+
+      const centerValueEl = document.getElementById("center-value");
+      const centerSubEl = document.getElementById("center-sub");
+      const miniCpuVal = document.getElementById("mini-cpu");
+      const miniCpuSub = document.getElementById("mini-cpu-sub");
+      const miniRamVal = document.getElementById("mini-ram");
+      const miniRamSub = document.getElementById("mini-ram-sub");
+      const miniFanVal = document.getElementById("mini-fan");
+      const miniFanSub = document.getElementById("mini-fan-sub");
+      const statusEl = document.getElementById("status");
+
+      function setGauge(name, percent, accent) {
+        const ring = gaugeRings[name];
+        if (!ring) return;
+        const p = Math.max(0, Math.min(100, percent));
+        ring.style.setProperty("--value", p);
+        if (accent) {
+          ring.style.setProperty("--accent-color", accent);
+        }
+      }
+
+      function formatBytes(bytes) {
+        const gb = bytes / (1024 * 1024 * 1024);
+        return gb.toFixed(2) + " GB";
+      }
+
+      function formatUptime(seconds) {
+        const h = Math.floor(seconds / 3600);
+        const m = Math.floor((seconds % 3600) / 60);
+        const s = Math.floor(seconds % 60);
+        const parts = [];
+        if (h) parts.push(h + "h");
+        if (m || h) parts.push(m + "m");
+        parts.push(s + "s");
+        return parts.join(" ");
+      }
+
+      async function updateStats() {
+        try {
+          const res = await fetch("/api/system-stats");
+          if (!res.ok) throw new Error("HTTP " + res.status);
+          const d = await res.json();
+
+          const { cpuTempC, load, totalMem, usedMem, uptime, fanRpm } = d;
+
+          // CPU temp -> main gauge
+          if (cpuTempC != null) {
+            const temp = cpuTempC;
+            centerValueEl.textContent = temp.toFixed(0);
+            centerSubEl.textContent =
+              "CPU: " +
+              temp.toFixed(1) +
+              "°C · Uptime: " +
+              formatUptime(uptime || 0);
+
+            let color = "var(--accent)";
+            if (temp >= 70) color = "var(--accent-hot)";
+            else if (temp >= 60) color = "var(--accent-warn)";
+
+            const pct = Math.min((temp / 85) * 100, 100);
+            setGauge("cpuMain", pct, color);
+          } else {
+            centerValueEl.textContent = "N/A";
+            centerSubEl.textContent = "CPU temperature not available.";
+            setGauge("cpuMain", 0, "var(--muted)");
+          }
+
+          // CPU load mini gauge (1.0 load = 100%)
+          if (typeof load === "number") {
+            const pctRaw = load * 100;
+            const pct = Math.max(0, Math.min(100, pctRaw));
+            const display = pct > 0 && pct < 1 ? 1 : Math.round(pct);
+
+            miniCpuVal.textContent = display + "%";
+            miniCpuSub.textContent = load.toFixed(2) + " load (1 min)";
+
+            let color = "var(--accent2)";
+            if (pct >= 80) color = "var(--accent-hot)";
+            else if (pct >= 60) color = "var(--accent-warn)";
+            setGauge("cpuLoad", pct, color);
+          } else {
+            miniCpuVal.textContent = "N/A";
+            miniCpuSub.textContent = "No load data.";
+            setGauge("cpuLoad", 0, "var(--muted)");
+          }
+
+          // Memory mini gauge
+          if (totalMem != null && usedMem != null) {
+            const pct = (usedMem / totalMem) * 100;
+            miniRamVal.textContent = Math.round(pct) + "%";
+            miniRamSub.textContent =
+              formatBytes(usedMem) + " / " + formatBytes(totalMem);
+
+            let color = "var(--accent2)";
+            if (pct >= 80) color = "var(--accent-hot)";
+            else if (pct >= 60) color = "var(--accent-warn)";
+            setGauge("mem", pct, color);
+          } else {
+            miniRamVal.textContent = "N/A";
+            miniRamSub.textContent = "Memory info not available.";
+            setGauge("mem", 0, "var(--muted)");
+          }
+
+          // Fan mini gauge
+          if (fanRpm != null) {
+            const rpm = fanRpm;
+            miniFanVal.textContent = rpm + " RPM";
+            miniFanSub.textContent = "Approx. speed";
+
+            if (rpm >= 1000) {
+              miniFanVal.style.fontSize = "0.85rem";
+            } else {
+              miniFanVal.style.fontSize = "1.1rem";
+            }
+
+            const pct = Math.min((rpm / 5000) * 100, 100);
+            setGauge("fan", pct, "var(--accent)");
+          } else {
+            miniFanVal.textContent = "N/A";
+            miniFanSub.textContent =
+              "No RPM sensor detected – this is normal on many fans.";
+            miniFanVal.style.fontSize = "1.1rem";
+            setGauge("fan", 0, "var(--muted)");
+          }
+
+          statusEl.textContent = "";
+        } catch (err) {
+          statusEl.textContent = "Stats error: " + err.message;
+        }
+      }
+
+      // Poll stats every 2s when System tab is active
+      setInterval(() => {
+        if (views.system.classList.contains("active")) {
+          updateStats();
+        }
+      }, 2000);
+      updateStats();
+
+      // -------- REBOOT --------
+      const rebootBtn = document.getElementById("rebootBtn");
+      rebootBtn.addEventListener("click", async () => {
+        if (!confirm("Are you sure you want to reboot the Pi?")) return;
+
+        rebootBtn.disabled = true;
+        statusEl.textContent = "Sending reboot command…";
+
+        try {
+          const res = await fetch("/api/reboot", { method: "POST" });
+          const data = await res.json().catch(() => ({}));
+          if (res.ok) {
+            statusEl.textContent =
+              "Rebooting… hotspot will drop for a bit then come back.";
+          } else {
+            statusEl.textContent =
+              "Reboot failed: " + (data.error || "Unknown error");
+          }
+        } catch (err) {
+          statusEl.textContent = "Error talking to server: " + err.message;
+        } finally {
+          setTimeout(() => {
+            rebootBtn.disabled = false;
+          }, 5000);
+        }
+      });
+
+      // -------- NETWORKING --------
+      const ethIpEl = document.getElementById("eth-ip");
+      const ethGwEl = document.getElementById("eth-gw");
+      const ethStatusEl = document.getElementById("eth-status");
+
+      const wlanIpEl = document.getElementById("wlan-ip");
+      const wlanGwEl = document.getElementById("wlan-gw");
+      const wlanStatusEl = document.getElementById("wlan-status");
+
+      const clientsBody = document.getElementById("clientsBody");
+      const clientsEmpty = document.getElementById("clientsEmpty");
+      const netStatusEl = document.getElementById("netStatus");
+
+      function setNetStatus(el, online) {
+        if (online) {
+          el.classList.remove("offline");
+          el.textContent = "Online";
+        } else {
+          el.classList.add("offline");
+          el.textContent = "Offline";
+        }
+      }
+
+      async function updateNetwork() {
+        try {
+          const res = await fetch("/api/network-info");
+          if (!res.ok) throw new Error("HTTP " + res.status);
+          const data = await res.json();
+
+          const { interfaces, clients } = data;
+          const eth = interfaces.eth0 || {};
+          const wlan = interfaces.wlan0 || {};
+
+          // eth0
+          ethIpEl.textContent = "IP: " + (eth.ipv4 || "--");
+          ethGwEl.textContent = "Gateway: " + (eth.gateway || "--");
+          setNetStatus(ethStatusEl, !!eth.ipv4);
+
+          // wlan0
+          wlanIpEl.textContent = "IP: " + (wlan.ipv4 || "--");
+          wlanGwEl.textContent =
+            "Gateway: " + (wlan.gateway || wlan.ipv4 || "--");
+          setNetStatus(wlanStatusEl, !!wlan.ipv4);
+
+          // clients
+          clientsBody.innerHTML = "";
+          if (clients && clients.length > 0) {
+            clients.forEach((c) => {
+              const tr = document.createElement("tr");
+              const tdIp = document.createElement("td");
+              const tdMac = document.createElement("td");
+              const tdHost = document.createElement("td");
+
+              tdIp.textContent = c.ip || "--";
+              tdMac.textContent = c.mac || "--";
+              tdHost.textContent = c.host || "";
+
+              tr.appendChild(tdIp);
+              tr.appendChild(tdMac);
+              tr.appendChild(tdHost);
+              clientsBody.appendChild(tr);
+            });
+            clientsEmpty.style.display = "none";
+          } else {
+            clientsEmpty.style.display = "block";
+          }
+
+          netStatusEl.textContent = "";
+        } catch (err) {
+          netStatusEl.textContent = "Network info error: " + err.message;
+        }
+      }
+
+      // Poll network info every 5s when Networking tab is active
+      setInterval(() => {
+        if (views.network.classList.contains("active")) {
+          updateNetwork();
+        }
+      }, 5000);
+      updateNetwork();
+    </script>
+  </body>
+</html>
