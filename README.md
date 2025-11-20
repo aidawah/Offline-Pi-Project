@@ -13,4 +13,6 @@ Features:
 
 ```bash
 cd ~/pi-control
-npm install
+git pull
+npm install           # only needed if package.json changed
+sudo systemctl restart pi-control.service
