@@ -299,6 +299,7 @@ async function readHotspotClients() {
     "/run/NetworkManager/dnsmasq-Hotspot.leases",
     "/run/nm-dnsmasq-Hotspot.leases",
     "/var/lib/NetworkManager/dnsmasq-Hotspot.leases",
+    "/var/lib/NetworkManager/dnsmasq-wlan0.leases",
     "/var/lib/misc/dnsmasq.leases",
   ];
   const leaseDirs = ["/run/NetworkManager", "/var/lib/NetworkManager", "/run", "/var/lib/misc"];
@@ -448,6 +449,7 @@ async function readHotspotClients() {
       missing: missingHosts,
       leases: Array.from(leasesByIp.entries()),
       leaseDebug,
+      leaseFiles: Array.from(leaseFiles),
     });
   }
 
