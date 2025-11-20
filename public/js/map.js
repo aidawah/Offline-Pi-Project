@@ -32,6 +32,7 @@ export function initMap() {
   const mapUseCampBtn = document.getElementById("mapUseCampBtn");
   const mapResetBtn = document.getElementById("mapResetBtn");
   const mapLayerBtn = document.getElementById("mapLayerBtn");
+  const campNameInput = document.getElementById("mapNameInput");
   const campLatInput = document.getElementById("mapLatInput");
   const campLonInput = document.getElementById("mapLonInput");
   const campSaveBtn = document.getElementById("mapSaveCampBtn");
@@ -79,22 +80,29 @@ export function initMap() {
         Number.isFinite(parsed.coords[0]) &&
         Number.isFinite(parsed.coords[1])
       ) {
-        return { coords: [Number(parsed.coords[0]), Number(parsed.coords[1])] };
+        return {
+          coords: [Number(parsed.coords[0]), Number(parsed.coords[1])],
+          name: parsed.name || "Saved camp",
+        };
       }
     } catch (_) {}
     return null;
   }
 
-  function saveCampLocation(lat, lon) {
-    savedCamp = { coords: [lat, lon] };
+  function saveCampLocation(lat, lon, name) {
+    savedCamp = { coords: [lat, lon], name: name || "Saved camp" };
     localStorage.setItem(CAMP_STORAGE_KEY, JSON.stringify(savedCamp));
-    updateCampStatus("Saved camp at " + lat.toFixed(5) + ", " + lon.toFixed(5));
+    updateCampStatus(
+      `${savedCamp.name} saved at ` + lat.toFixed(5) + ", " + lon.toFixed(5)
+    );
+    refreshQuickLinks();
   }
 
   function clearCampLocation() {
     savedCamp = null;
     localStorage.removeItem(CAMP_STORAGE_KEY);
     updateCampStatus("No saved camp location.");
+    refreshQuickLinks();
   }
 
   function placeMarker(coords, label) {
@@ -118,15 +126,16 @@ export function initMap() {
       updateCampStatus("No saved camp location.");
       return false;
     }
-    if (campLatInput && campLonInput) {
+    if (campLatInput && campLonInput && campNameInput) {
       campLatInput.value = savedCamp.coords[0];
       campLonInput.value = savedCamp.coords[1];
+      campNameInput.value = savedCamp.name || "Saved camp";
     }
     if (center) {
-      placeMarker(savedCamp.coords, "Pinned saved camp");
+      placeMarker(savedCamp.coords, savedCamp.name || "Pinned saved camp");
     }
     updateCampStatus(
-      "Saved camp: " +
+      (savedCamp.name ? savedCamp.name + " · " : "Saved camp: ") +
         savedCamp.coords[0].toFixed(5) +
         ", " +
         savedCamp.coords[1].toFixed(5)
@@ -135,9 +144,10 @@ export function initMap() {
   }
 
   function hydrateCampInputs() {
-    if (!savedCamp || !campLatInput || !campLonInput) return;
+    if (!savedCamp || !campLatInput || !campLonInput || !campNameInput) return;
     campLatInput.value = savedCamp.coords[0];
     campLonInput.value = savedCamp.coords[1];
+    campNameInput.value = savedCamp.name || "Saved camp";
   }
 
   function syncInputsToCenter() {
@@ -145,6 +155,28 @@ export function initMap() {
     const center = coMap.getCenter();
     campLatInput.value = center.lat.toFixed(6);
     campLonInput.value = center.lng.toFixed(6);
+  }
+
+  function refreshQuickLinks() {
+    if (!mapQuickLinks) return;
+    mapQuickLinks.innerHTML = "";
+    if (savedCamp) {
+      const savedBtn = document.createElement("button");
+      savedBtn.className = "map-chip-btn";
+      savedBtn.textContent = savedCamp.name || "Saved camp";
+      savedBtn.addEventListener("click", () => {
+        ensureColoradoMap();
+        useSavedCamp();
+      });
+      mapQuickLinks.appendChild(savedBtn);
+    }
+    coloradoPlaces.slice(0, 10).forEach((place) => {
+      const btn = document.createElement("button");
+      btn.className = "map-chip-btn";
+      btn.textContent = place.name;
+      btn.addEventListener("click", () => focusPlace(place));
+      mapQuickLinks.appendChild(btn);
+    });
   }
 
   function refreshMapSize() {
@@ -173,15 +205,7 @@ export function initMap() {
   }
 
   function buildQuickLinks() {
-    if (!mapQuickLinks) return;
-    mapQuickLinks.innerHTML = "";
-    coloradoPlaces.slice(0, 10).forEach((place) => {
-      const btn = document.createElement("button");
-      btn.className = "map-chip-btn";
-      btn.textContent = place.name;
-      btn.addEventListener("click", () => focusPlace(place));
-      mapQuickLinks.appendChild(btn);
-    });
+    refreshQuickLinks();
   }
 
   function ensureColoradoMap() {
@@ -471,11 +495,12 @@ export function initMap() {
     campSaveBtn.addEventListener("click", () => {
       const lat = campLatInput ? parseFloat(campLatInput.value) : null;
       const lon = campLonInput ? parseFloat(campLonInput.value) : null;
+      const name = campNameInput ? campNameInput.value.trim() : "";
       if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
         updateCampStatus("Enter a valid latitude and longitude.");
         return;
       }
-      saveCampLocation(lat, lon);
+      saveCampLocation(lat, lon, name);
       ensureColoradoMap();
       useSavedCamp();
     });
