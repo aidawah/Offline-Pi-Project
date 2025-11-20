@@ -201,9 +201,34 @@
             </div>
             <div class="map-actions">
               <button class="map-btn" id="mapLocateBtn">Use my location</button>
+              <button class="map-btn subtle" id="mapUseCampBtn">Use saved spot</button>
               <button class="map-btn" id="mapResetBtn">Reset view</button>
               <button class="map-btn" id="mapLayerBtn">Switch layer</button>
             </div>
+          </div>
+
+          <div class="map-save">
+            <div class="map-save-inputs">
+              <input
+                class="map-input"
+                id="mapLatInput"
+                type="number"
+                step="0.000001"
+                placeholder="Latitude"
+              />
+              <input
+                class="map-input"
+                id="mapLonInput"
+                type="number"
+                step="0.000001"
+                placeholder="Longitude"
+              />
+            </div>
+            <div class="map-save-actions">
+              <button class="map-btn" id="mapSaveCampBtn">Save camp location</button>
+              <button class="map-btn subtle" id="mapClearCampBtn">Clear saved</button>
+            </div>
+            <div class="map-meta" id="mapCampStatus">No saved camp location.</div>
           </div>
 
           <div class="map-layout">

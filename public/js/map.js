@@ -29,8 +29,14 @@ export function initMap() {
   const mapSearchResults = document.getElementById("mapSearchResults");
   const mapSearchClear = document.getElementById("mapSearchClear");
   const mapLocateBtn = document.getElementById("mapLocateBtn");
+  const mapUseCampBtn = document.getElementById("mapUseCampBtn");
   const mapResetBtn = document.getElementById("mapResetBtn");
   const mapLayerBtn = document.getElementById("mapLayerBtn");
+  const campLatInput = document.getElementById("mapLatInput");
+  const campLonInput = document.getElementById("mapLonInput");
+  const campSaveBtn = document.getElementById("mapSaveCampBtn");
+  const campClearBtn = document.getElementById("mapClearCampBtn");
+  const campStatusEl = document.getElementById("mapCampStatus");
 
   const tileConfig = (window.PICO_CONFIG && window.PICO_CONFIG.tiles) || {};
   const streetSource = {
@@ -53,6 +59,85 @@ export function initMap() {
   let locationMarker = null;
   let mapSizeTimer = null;
   let fallbackLayerAdded = false;
+  const CAMP_STORAGE_KEY = "picoCampLocation";
+  let savedCamp = loadCampLocation();
+
+  function updateCampStatus(msg) {
+    if (campStatusEl) campStatusEl.textContent = msg;
+  }
+
+  function loadCampLocation() {
+    try {
+      const raw = localStorage.getItem(CAMP_STORAGE_KEY);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      if (
+        parsed &&
+        Array.isArray(parsed.coords) &&
+        parsed.coords.length === 2 &&
+        Number.isFinite(parsed.coords[0]) &&
+        Number.isFinite(parsed.coords[1])
+      ) {
+        return { coords: [Number(parsed.coords[0]), Number(parsed.coords[1])] };
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  function saveCampLocation(lat, lon) {
+    savedCamp = { coords: [lat, lon] };
+    localStorage.setItem(CAMP_STORAGE_KEY, JSON.stringify(savedCamp));
+    updateCampStatus("Saved camp at " + lat.toFixed(5) + ", " + lon.toFixed(5));
+  }
+
+  function clearCampLocation() {
+    savedCamp = null;
+    localStorage.removeItem(CAMP_STORAGE_KEY);
+    updateCampStatus("No saved camp location.");
+  }
+
+  function placeMarker(coords, label) {
+    if (!coMap) return;
+    if (locationMarker) {
+      locationMarker.setLatLng(coords);
+    } else {
+      locationMarker = L.circleMarker(coords, {
+        radius: 7,
+        color: "#22d3ee",
+        fillColor: "#22d3ee",
+        fillOpacity: 0.7,
+      }).addTo(coMap);
+    }
+    coMap.flyTo(coords, 12, { duration: 1 });
+    updateMapMeta(label ? label : "Pinned location");
+  }
+
+  function useSavedCamp(center = true) {
+    if (!savedCamp) {
+      updateCampStatus("No saved camp location.");
+      return false;
+    }
+    if (campLatInput && campLonInput) {
+      campLatInput.value = savedCamp.coords[0];
+      campLonInput.value = savedCamp.coords[1];
+    }
+    if (center) {
+      placeMarker(savedCamp.coords, "Pinned saved camp");
+    }
+    updateCampStatus(
+      "Saved camp: " +
+        savedCamp.coords[0].toFixed(5) +
+        ", " +
+        savedCamp.coords[1].toFixed(5)
+    );
+    return true;
+  }
+
+  function hydrateCampInputs() {
+    if (!savedCamp || !campLatInput || !campLonInput) return;
+    campLatInput.value = savedCamp.coords[0];
+    campLonInput.value = savedCamp.coords[1];
+  }
 
   function refreshMapSize() {
     if (!coMap) return;
@@ -170,6 +255,7 @@ export function initMap() {
       mapTileNoteEl.textContent =
         "Local tiles first (MAP_TILE_URL). Auto-fallback to online tiles only if local fails. Topo uses OpenTopoMap (needs internet).";
     }
+    useSavedCamp(false);
     return coMap;
   }
 
@@ -269,11 +355,26 @@ export function initMap() {
     });
   }
 
+  hydrateCampInputs();
+  if (savedCamp) {
+    updateCampStatus(
+      "Saved camp: " + savedCamp.coords[0].toFixed(5) + ", " + savedCamp.coords[1].toFixed(5)
+    );
+  } else {
+    updateCampStatus("No saved camp location.");
+  }
+
   if (mapLayerBtn) {
     mapLayerBtn.addEventListener("click", toggleLayer);
   }
   if (mapResetBtn) {
     mapResetBtn.addEventListener("click", resetMapView);
+  }
+  if (mapUseCampBtn) {
+    mapUseCampBtn.addEventListener("click", () => {
+      ensureColoradoMap();
+      useSavedCamp();
+    });
   }
   if (mapLocateBtn) {
     mapLocateBtn.addEventListener("click", () => {
@@ -301,21 +402,6 @@ export function initMap() {
         }
       }
 
-      async function placeMarker(coords, label) {
-        if (locationMarker) {
-          locationMarker.setLatLng(coords);
-        } else {
-          locationMarker = L.circleMarker(coords, {
-            radius: 7,
-            color: "#22d3ee",
-            fillColor: "#22d3ee",
-            fillOpacity: 0.7,
-          }).addTo(map);
-        }
-        map.flyTo(coords, 12, { duration: 1 });
-        updateMapMeta(label ? "Pinned " + label : "Pinned your location");
-      }
-
       const handleFailure = (msg) => {
         if (mapMetaEl) {
           mapMetaEl.textContent = msg;
@@ -331,9 +417,10 @@ export function initMap() {
       if (useBrowserGeo) {
         navigator.geolocation.getCurrentPosition(
           (pos) => {
-            placeMarker([pos.coords.latitude, pos.coords.longitude]);
+            placeMarker([pos.coords.latitude, pos.coords.longitude], "Pinned your location");
           },
           async (err) => {
+            if (useSavedCamp()) return;
             const ipResult = await locateByIP();
             if (ipResult) {
               placeMarker(ipResult.coords, ipResult.label);
@@ -344,6 +431,9 @@ export function initMap() {
         );
       } else {
         locateByIP().then((ipResult) => {
+          if (useSavedCamp()) {
+            return;
+          }
           if (ipResult) {
             placeMarker(ipResult.coords, ipResult.label);
           } else {
@@ -353,6 +443,26 @@ export function initMap() {
           }
         });
       }
+    });
+  }
+
+  if (campSaveBtn) {
+    campSaveBtn.addEventListener("click", () => {
+      const lat = campLatInput ? parseFloat(campLatInput.value) : null;
+      const lon = campLonInput ? parseFloat(campLonInput.value) : null;
+      if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
+        updateCampStatus("Enter a valid latitude and longitude.");
+        return;
+      }
+      saveCampLocation(lat, lon);
+      ensureColoradoMap();
+      useSavedCamp();
+    });
+  }
+
+  if (campClearBtn) {
+    campClearBtn.addEventListener("click", () => {
+      clearCampLocation();
     });
   }
 

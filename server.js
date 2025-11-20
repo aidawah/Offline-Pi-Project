@@ -1,12 +1,16 @@
 const express = require("express");
 const { exec } = require("child_process");
 const https = require("https");
+const http = require("http");
 const path = require("path");
 const os = require("os");
 const fs = require("fs");
 
 const app = express();
-const PORT = 3000;
+const PORT = Number.parseInt(process.env.PORT || "3000", 10);
+const HTTPS_PORT = Number.parseInt(process.env.HTTPS_PORT || "3443", 10);
+const TLS_KEY_PATH = process.env.PICO_TLS_KEY_PATH || process.env.TLS_KEY_PATH;
+const TLS_CERT_PATH = process.env.PICO_TLS_CERT_PATH || process.env.TLS_CERT_PATH;
 const WEATHER_LAT = Number.isFinite(parseFloat(process.env.WEATHER_LAT))
   ? parseFloat(process.env.WEATHER_LAT)
   : 39.7392;
@@ -406,6 +410,23 @@ app.get("/api/weather", async (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`Pi Control server listening on port ${PORT}`);
+const httpServer = http.createServer(app);
+httpServer.listen(PORT, () => {
+  console.log(`Pi Control HTTP server listening on port ${PORT}`);
 });
+
+if (TLS_KEY_PATH && TLS_CERT_PATH) {
+  try {
+    const httpsOpts = {
+      key: fs.readFileSync(TLS_KEY_PATH),
+      cert: fs.readFileSync(TLS_CERT_PATH),
+    };
+    https.createServer(httpsOpts, app).listen(HTTPS_PORT, () => {
+      console.log(`Pi Control HTTPS server listening on port ${HTTPS_PORT}`);
+    });
+  } catch (err) {
+    console.error("Failed to start HTTPS server:", err.message);
+  }
+} else {
+  console.log("HTTPS disabled (set PICO_TLS_KEY_PATH and PICO_TLS_CERT_PATH to enable)");
+}

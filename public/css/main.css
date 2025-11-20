@@ -857,6 +857,35 @@ p {
   gap: 0.8rem;
   align-items: center;
 }
+.map-save {
+  margin-top: 0.8rem;
+  display: grid;
+  gap: 0.5rem;
+}
+.map-save-inputs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+.map-input {
+  flex: 1 1 180px;
+  min-width: 140px;
+  border-radius: 0.65rem;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: #0f172a;
+  padding: 0.6rem 0.8rem;
+  color: var(--text);
+  font-size: 0.9rem;
+}
+.map-input:focus {
+  outline: 1px solid var(--accent);
+  border-color: var(--accent);
+}
+.map-save-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
 .map-search {
   position: relative;
   flex: 1 1 320px;
