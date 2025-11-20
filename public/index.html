@@ -415,6 +415,12 @@
         border: 1px solid rgba(59, 130, 246, 0.35);
         box-shadow: 0 12px 30px rgba(0, 0, 0, 0.55);
         overflow: hidden;
+        cursor: pointer;
+        transition: transform 0.12s ease, border-color 0.12s ease;
+      }
+      .weather-day:hover {
+        transform: translateY(-2px);
+        border-color: rgba(34, 211, 238, 0.6);
       }
       .weather-day::before {
         content: "";
@@ -455,6 +461,64 @@
         margin-top: 0.4rem;
         font-size: 0.85rem;
         color: #93c5fd;
+      }
+      .weather-detail-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(2, 6, 23, 0.7);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 1rem;
+        z-index: 30;
+        backdrop-filter: blur(6px);
+      }
+      .weather-detail-overlay.active {
+        display: flex;
+      }
+      .weather-detail-card {
+        max-width: 460px;
+        width: 100%;
+        border-radius: 1.25rem;
+        padding: 1.25rem;
+        background: radial-gradient(circle at 0% 0%, #111827, #020617);
+        border: 1px solid rgba(59, 130, 246, 0.4);
+        box-shadow: 0 24px 52px rgba(0, 0, 0, 0.6);
+        position: relative;
+      }
+      .weather-detail-close {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        border: none;
+        border-radius: 999px;
+        padding: 0.35rem 0.6rem;
+        background: rgba(148, 163, 184, 0.12);
+        color: var(--text);
+        cursor: pointer;
+      }
+      .detail-grid {
+        margin-top: 0.9rem;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        gap: 0.8rem;
+      }
+      .detail-item {
+        padding: 0.75rem 0.7rem;
+        border-radius: 0.75rem;
+        background: rgba(15, 23, 42, 0.6);
+        border: 1px solid rgba(148, 163, 184, 0.18);
+      }
+      .detail-label {
+        color: var(--muted);
+        font-size: 0.78rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+      .detail-value {
+        margin-top: 0.25rem;
+        font-size: 1.05rem;
+        font-weight: 600;
       }
 
       code {
@@ -606,9 +670,9 @@
             <div>
               <h1>7-Day Forecast</h1>
               <p>
-                Quick snapshot of the coming week. Set
-                <code>WEATHER_LAT</code> and <code>WEATHER_LON</code> to tune the
-                location.
+                Quick snapshot of the coming week (temps in Fahrenheit). Set
+                <code>WEATHER_LAT</code> and <code>WEATHER_LON</code> to tune
+                the location.
               </p>
             </div>
             <div class="weather-pill" id="weatherLocation">
@@ -617,6 +681,16 @@
           </div>
 
           <div class="weather-grid" id="weatherGrid"></div>
+          <div class="weather-detail-overlay" id="weatherDetail">
+            <div class="weather-detail-card" id="weatherDetailCard">
+              <button class="weather-detail-close" id="detailClose">X</button>
+              <div class="weather-label" id="detailDate">Date</div>
+              <div class="weather-temp" id="detailTemp">-- / --</div>
+              <div class="weather-sub" id="detailSummary">Summary</div>
+              <div class="weather-prob" id="detailPrecip">Precip</div>
+              <div class="detail-grid" id="detailGrid"></div>
+            </div>
+          </div>
           <div class="status" id="weatherStatus"></div>
         </div>
       </section>
@@ -706,7 +780,15 @@
       const weatherGrid = document.getElementById("weatherGrid");
       const weatherStatus = document.getElementById("weatherStatus");
       const weatherLocation = document.getElementById("weatherLocation");
+      const weatherDetail = document.getElementById("weatherDetail");
+      const detailClose = document.getElementById("detailClose");
+      const detailDate = document.getElementById("detailDate");
+      const detailTemp = document.getElementById("detailTemp");
+      const detailSummary = document.getElementById("detailSummary");
+      const detailPrecip = document.getElementById("detailPrecip");
+      const detailGrid = document.getElementById("detailGrid");
       let lastWeatherFetch = 0;
+      let lastWeatherDays = [];
 
       function weatherCodeMeta(code) {
         const numeric = Number(code);
@@ -739,15 +821,98 @@
         return days[date.getDay()] + " " + month + "/" + day;
       }
 
+      function formatTime(str) {
+        if (!str) return "--";
+        const d = new Date(str);
+        if (isNaN(d.getTime())) return "--";
+        const h = d.getHours();
+        const m = d.getMinutes();
+        const hr = h % 12 || 12;
+        const mm = m < 10 ? "0" + m : m;
+        const suffix = h >= 12 ? "PM" : "AM";
+        return hr + ":" + mm + " " + suffix;
+      }
+
+      function closeWeatherDetail() {
+        weatherDetail.classList.remove("active");
+      }
+      detailClose.addEventListener("click", closeWeatherDetail);
+      weatherDetail.addEventListener("click", (e) => {
+        if (e.target === weatherDetail) closeWeatherDetail();
+      });
+
+      function showWeatherDetail(day) {
+        if (!day) return;
+        const meta = weatherCodeMeta(day.weatherCode);
+
+        detailDate.textContent = formatDateLabel(day.date);
+        const hi = Number.isFinite(Number(day.tempMax))
+          ? Math.round(Number(day.tempMax)) + "F"
+          : "--";
+        const lo = Number.isFinite(Number(day.tempMin))
+          ? Math.round(Number(day.tempMin)) + "F"
+          : "--";
+        detailTemp.textContent = hi + " / " + lo;
+        detailSummary.textContent = meta.label;
+
+        const precipParts = [];
+        if (Number.isFinite(Number(day.precipProb))) {
+          precipParts.push(Number(day.precipProb) + "% chance");
+        }
+        if (Number.isFinite(Number(day.precipSum))) {
+          precipParts.push(Number(day.precipSum).toFixed(2) + " in total");
+        }
+        if (Number.isFinite(Number(day.precipHours))) {
+          precipParts.push(Number(day.precipHours).toFixed(1) + " hrs");
+        }
+        detailPrecip.textContent = precipParts.join(" | ") || "Precip data n/a";
+
+        const detailItems = [
+          { label: "Sunrise", value: formatTime(day.sunrise) },
+          { label: "Sunset", value: formatTime(day.sunset) },
+          {
+            label: "Wind Max",
+            value: Number.isFinite(Number(day.windSpeedMax))
+              ? Number(day.windSpeedMax).toFixed(1) + " mph"
+              : "--",
+          },
+          {
+            label: "Wind Dir",
+            value: Number.isFinite(Number(day.windDir))
+              ? Number(day.windDir).toFixed(0) + " deg"
+              : "--",
+          },
+          {
+            label: "UV Index",
+            value: Number.isFinite(Number(day.uvIndex))
+              ? Number(day.uvIndex).toFixed(1)
+              : "--",
+          },
+        ];
+
+        detailGrid.innerHTML = "";
+        detailItems.forEach((item) => {
+          const div = document.createElement("div");
+          div.className = "detail-item";
+          div.innerHTML = `
+            <div class="detail-label">${item.label}</div>
+            <div class="detail-value">${item.value}</div>
+          `;
+          detailGrid.appendChild(div);
+        });
+
+        weatherDetail.classList.add("active");
+      }
+
       function renderWeather(days) {
         weatherGrid.innerHTML = "";
-        days.slice(0, 7).forEach((day) => {
+        days.slice(0, 7).forEach((day, idx) => {
           const meta = weatherCodeMeta(day.weatherCode);
           const hi = Number.isFinite(Number(day.tempMax))
-            ? Math.round(Number(day.tempMax)) + "C"
+            ? Math.round(Number(day.tempMax)) + "F"
             : "--";
           const lo = Number.isFinite(Number(day.tempMin))
-            ? Math.round(Number(day.tempMin)) + "C"
+            ? Math.round(Number(day.tempMin)) + "F"
             : "--";
           const precipParts = [];
           if (Number.isFinite(Number(day.precipProb))) {
@@ -769,6 +934,7 @@
             <div class="weather-sub">${meta.label}</div>
             <div class="weather-prob">${precipText}</div>
           `;
+          card.addEventListener("click", () => showWeatherDetail(days[idx]));
           weatherGrid.appendChild(card);
         });
       }
@@ -787,6 +953,7 @@
             throw new Error("No forecast data");
           }
 
+          lastWeatherDays = data.days;
           renderWeather(data.days);
 
           const locBits = [];

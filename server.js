@@ -9,10 +9,10 @@ const app = express();
 const PORT = 3000;
 const WEATHER_LAT = Number.isFinite(parseFloat(process.env.WEATHER_LAT))
   ? parseFloat(process.env.WEATHER_LAT)
-  : 40.7128;
+  : 39.7392;
 const WEATHER_LON = Number.isFinite(parseFloat(process.env.WEATHER_LON))
   ? parseFloat(process.env.WEATHER_LON)
-  : -74.006;
+  : -104.9903;
 const WEATHER_CACHE_MS = 15 * 60 * 1000;
 
 app.use(express.json());
@@ -285,7 +285,11 @@ app.get("/api/weather", async (req, res) => {
     return res.json(weatherCache.data);
   }
 
-  const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=weathercode,temperature_2m_max,temperature_2m_min,precipitation_probability_mean,precipitation_hours&timezone=auto&forecast_days=7`;
+  const url =
+    "https://api.open-meteo.com/v1/forecast" +
+    `?latitude=${lat}&longitude=${lon}` +
+    "&daily=weathercode,temperature_2m_max,temperature_2m_min,precipitation_probability_mean,precipitation_hours,precipitation_sum,sunrise,sunset,windspeed_10m_max,winddirection_10m_dominant,uv_index_max" +
+    "&timezone=auto&forecast_days=7&temperature_unit=fahrenheit&windspeed_unit=mph&precipitation_unit=inch";
 
   try {
     const json = await fetchJson(url);
@@ -318,6 +322,31 @@ app.get("/api/weather", async (req, res) => {
         json.daily.precipitation_hours &&
         json.daily.precipitation_hours[idx] != null
           ? json.daily.precipitation_hours[idx]
+          : null,
+      precipSum:
+        json.daily.precipitation_sum && json.daily.precipitation_sum[idx] != null
+          ? json.daily.precipitation_sum[idx]
+          : null,
+      sunrise:
+        json.daily.sunrise && json.daily.sunrise[idx] != null
+          ? json.daily.sunrise[idx]
+          : null,
+      sunset:
+        json.daily.sunset && json.daily.sunset[idx] != null
+          ? json.daily.sunset[idx]
+          : null,
+      windSpeedMax:
+        json.daily.windspeed_10m_max && json.daily.windspeed_10m_max[idx] != null
+          ? json.daily.windspeed_10m_max[idx]
+          : null,
+      windDir:
+        json.daily.winddirection_10m_dominant &&
+        json.daily.winddirection_10m_dominant[idx] != null
+          ? json.daily.winddirection_10m_dominant[idx]
+          : null,
+      uvIndex:
+        json.daily.uv_index_max && json.daily.uv_index_max[idx] != null
+          ? json.daily.uv_index_max[idx]
           : null,
     }));
 
