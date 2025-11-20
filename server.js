@@ -46,6 +46,7 @@ let weatherCache = {
   lon: WEATHER_LON,
   data: null,
 };
+let lastHotspotHostLog = 0;
 
 // Expose minimal frontend config (tile source)
 app.get("/config.js", (req, res) => {
@@ -421,6 +422,15 @@ async function readHotspotClients() {
       return { ...c, host: resolvedHost };
     })
   );
+
+  const missingHosts = withHosts.filter((c) => !c.host);
+  if (missingHosts.length > 0 && Date.now() - lastHotspotHostLog > 10000) {
+    lastHotspotHostLog = Date.now();
+    console.log("[hotspot] missing hostnames", {
+      missing: missingHosts,
+      leases: Array.from(leasesByIp.entries()),
+    });
+  }
 
   return withHosts;
 }
