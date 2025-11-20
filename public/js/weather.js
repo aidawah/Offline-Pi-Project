@@ -231,7 +231,9 @@ export function initWeather(isActive) {
         updateWeatherInputs(
           Number(data.latitude),
           Number(data.longitude),
-          savedWeatherCoords?.name || weatherNameInput?.value || ""
+          (weatherNameInput && weatherNameInput.value.trim()) ||
+            savedWeatherCoords?.name ||
+            DEFAULT_WEATHER.name
         );
       }
 
@@ -239,7 +241,10 @@ export function initWeather(isActive) {
       if (lonLabel) locBits.push(lonLabel);
 
       const inputName = weatherNameInput ? weatherNameInput.value.trim() : "";
-      const namePart = inputName || (savedWeatherCoords && savedWeatherCoords.name) || "";
+      const namePart =
+        inputName ||
+        (savedWeatherCoords && savedWeatherCoords.name) ||
+        DEFAULT_WEATHER.name;
 
       if (namePart) locBits.push(namePart);
 
@@ -299,7 +304,11 @@ export function initWeather(isActive) {
 
   if (weatherDefaultBtn) {
     weatherDefaultBtn.addEventListener("click", () => {
-      updateWeatherInputs(DEFAULT_WEATHER.lat, DEFAULT_WEATHER.lon, "");
+      updateWeatherInputs(
+        DEFAULT_WEATHER.lat,
+        DEFAULT_WEATHER.lon,
+        DEFAULT_WEATHER.name
+      );
       updateWeather(true);
     });
   }
