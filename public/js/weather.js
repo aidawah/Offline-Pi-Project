@@ -14,11 +14,14 @@ export function initWeather(isActive) {
   const weatherLonInput = document.getElementById("weatherLonInput");
   const weatherSaveBtn = document.getElementById("weatherSaveBtn");
   const weatherRefreshBtn = document.getElementById("weatherRefreshBtn");
+  const weatherDefaultBtn = document.getElementById("weatherDefaultBtn");
 
   let lastWeatherFetch = 0;
   let lastWeatherDays = [];
   const WEATHER_STORAGE_KEY = "picoWeatherLocation";
+  const WEATHER_DEFAULT_KEY = "picoWeatherDefaultLocation";
   let savedWeatherCoords = loadSavedWeatherCoords();
+  let defaultWeatherCoords = loadDefaultWeatherCoords();
 
   function loadSavedWeatherCoords() {
     try {
@@ -34,6 +37,28 @@ export function initWeather(isActive) {
       }
     } catch (_) {}
     return null;
+  }
+
+  function loadDefaultWeatherCoords() {
+    try {
+      const raw = localStorage.getItem(WEATHER_DEFAULT_KEY);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      if (
+        parsed &&
+        Number.isFinite(Number(parsed.lat)) &&
+        Number.isFinite(Number(parsed.lon))
+      ) {
+        return { lat: Number(parsed.lat), lon: Number(parsed.lon), name: parsed.name || "" };
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  function storeDefaultIfEmpty(lat, lon, name) {
+    if (defaultWeatherCoords || !Number.isFinite(lat) || !Number.isFinite(lon)) return;
+    defaultWeatherCoords = { lat, lon, name: name || "" };
+    localStorage.setItem(WEATHER_DEFAULT_KEY, JSON.stringify(defaultWeatherCoords));
   }
 
   function saveWeatherCoords(lat, lon, name) {
@@ -222,13 +247,18 @@ export function initWeather(isActive) {
           Number(data.longitude),
           savedWeatherCoords?.name || ""
         );
+        storeDefaultIfEmpty(Number(data.latitude), Number(data.longitude), data.timezone);
       }
 
       if (latLabel) locBits.push(latLabel);
       if (lonLabel) locBits.push(lonLabel);
       if (data.timezone) locBits.push(data.timezone);
 
-      const namePart = savedWeatherCoords && savedWeatherCoords.name;
+      const inputName = weatherNameInput ? weatherNameInput.value.trim() : "";
+      const namePart =
+        inputName ||
+        (savedWeatherCoords && savedWeatherCoords.name) ||
+        (defaultWeatherCoords && defaultWeatherCoords.name);
       weatherLocation.textContent =
         [namePart, ...locBits.filter(Boolean)].filter(Boolean).join(" | ") ||
         "Forecast location";
@@ -281,6 +311,24 @@ export function initWeather(isActive) {
       savedWeatherCoords.lon,
       savedWeatherCoords.name || ""
     );
+  }
+
+  if (weatherDefaultBtn) {
+    weatherDefaultBtn.addEventListener("click", () => {
+      const target =
+        defaultWeatherCoords ||
+        (savedWeatherCoords && {
+          lat: savedWeatherCoords.lat,
+          lon: savedWeatherCoords.lon,
+          name: savedWeatherCoords.name || "Default",
+        });
+      if (!target) {
+        weatherStatus.textContent = "No default location saved yet.";
+        return;
+      }
+      updateWeatherInputs(target.lat, target.lon, target.name);
+      updateWeather(true);
+    });
   }
 
   return {
