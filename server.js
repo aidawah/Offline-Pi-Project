@@ -226,9 +226,9 @@ function summarizeInterfaces(ipRouteText) {
   };
 }
 
-function readHotspotClients() {
-  // Collect hostnames from dnsmasq lease files, but only show clients that are
-  // currently present in the ARP table on wlan0 to avoid long-lived stale entries.
+async function readHotspotClients() {
+  // Collect hostnames from dnsmasq lease files, then intersect with stations
+  // currently associated to wlan0 (via `iw`) to avoid stale entries.
   const knownFiles = [
     "/run/NetworkManager/dnsmasq-Hotspot.leases",
     "/run/nm-dnsmasq-Hotspot.leases",
@@ -250,6 +250,7 @@ function readHotspotClients() {
   }
 
   const leasesByIp = new Map();
+  const leasesByMac = new Map();
   const nowSec = Math.floor(Date.now() / 1000);
   const leaseGraceSec = 60; // allow brief grace after expiry to avoid flicker
 
@@ -262,7 +263,7 @@ function readHotspotClients() {
       if (parts.length < 3) continue;
 
       const expiresRaw = parts[0];
-      const mac = parts[1];
+      const macRaw = parts[1];
       const ip = parts[2];
       const host = parts[3] && parts[3] !== "*" ? parts[3] : null;
       const expires =
@@ -270,9 +271,11 @@ function readHotspotClients() {
 
       // Skip leases that are clearly expired to avoid stale rows.
       if (expires && expires > 0 && expires + leaseGraceSec < nowSec) continue;
-      if (!ip || !mac) continue;
+      if (!ip || !macRaw) continue;
 
+      const mac = macRaw.toLowerCase();
       leasesByIp.set(ip, { host, mac });
+      leasesByMac.set(mac, { host, ip });
     }
   }
 
@@ -285,7 +288,19 @@ function readHotspotClients() {
     }
   }
 
-  const clients = [];
+  const stationDump = await runCmd("iw dev wlan0 station dump");
+  const stationMacs = new Set();
+  if (stationDump) {
+    const lines = stationDump.split("\n");
+    for (const line of lines) {
+      const match = line.match(/Station\s+([0-9a-f:]{17})/i);
+      if (match && match[1]) {
+        stationMacs.add(match[1].toLowerCase());
+      }
+    }
+  }
+
+  const arpEntries = [];
   try {
     const arpText = fs.readFileSync("/proc/net/arp", "utf8");
     const lines = arpText.split("\n").slice(1);
@@ -295,7 +310,7 @@ function readHotspotClients() {
       const parts = trimmed.split(/\s+/);
       if (parts.length >= 6) {
         const ip = parts[0];
-        const mac = parts[3];
+        const mac = (parts[3] || "").toLowerCase();
         const dev = parts[5];
         const flagsRaw = parts[2];
         const flagsNum = parseInt(flagsRaw, 16) || 0;
@@ -303,16 +318,33 @@ function readHotspotClients() {
 
         if (dev === "wlan0" && /^10\.42\./.test(ip) && isComplete) {
           if (!mac || mac === "00:00:00:00:00:00") continue;
-          const leaseInfo = leasesByIp.get(ip);
-          clients.push({
-            ip,
-            mac,
-            host: leaseInfo ? leaseInfo.host : null,
-          });
+          arpEntries.push({ ip, mac });
         }
       }
     }
   } catch (_) {}
+
+  const clients = [];
+  if (stationMacs.size > 0) {
+    for (const mac of stationMacs) {
+      const arp = arpEntries.find((a) => a.mac === mac);
+      const lease = leasesByMac.get(mac) || (arp?.ip ? leasesByIp.get(arp.ip) : null);
+      clients.push({
+        ip: arp?.ip || lease?.ip || null,
+        mac,
+        host: lease?.host || null,
+      });
+    }
+  } else {
+    for (const arp of arpEntries) {
+      const lease = leasesByIp.get(arp.ip) || leasesByMac.get(arp.mac);
+      clients.push({
+        ip: arp.ip,
+        mac: arp.mac,
+        host: lease?.host || null,
+      });
+    }
+  }
 
   return clients;
 }
@@ -347,7 +379,7 @@ async function getNetworkInfo() {
   );
 
   const interfaces = summarizeInterfaces(ipRoute);
-  const clients = readHotspotClients();
+  const clients = await readHotspotClients();
 
   return {
     interfaces,
