@@ -239,13 +239,9 @@ export function initWeather(isActive) {
       if (lonLabel) locBits.push(lonLabel);
 
       const inputName = weatherNameInput ? weatherNameInput.value.trim() : "";
-      const namePart =
-        inputName ||
-        (savedWeatherCoords && savedWeatherCoords.name) ||
-        DEFAULT_WEATHER.name;
+      const namePart = inputName || (savedWeatherCoords && savedWeatherCoords.name) || "";
 
       if (namePart) locBits.push(namePart);
-      if (data.timezone) locBits.push(data.timezone);
 
       weatherLocation.textContent = locBits.filter(Boolean).join(" | ") || "Forecast location";
 
@@ -303,7 +299,7 @@ export function initWeather(isActive) {
 
   if (weatherDefaultBtn) {
     weatherDefaultBtn.addEventListener("click", () => {
-      updateWeatherInputs(DEFAULT_WEATHER.lat, DEFAULT_WEATHER.lon, DEFAULT_WEATHER.name);
+      updateWeatherInputs(DEFAULT_WEATHER.lat, DEFAULT_WEATHER.lon, "");
       updateWeather(true);
     });
   }
