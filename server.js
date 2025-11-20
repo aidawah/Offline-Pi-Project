@@ -227,46 +227,65 @@ function summarizeInterfaces(ipRouteText) {
 }
 
 function readHotspotClients() {
-  // Try a few likely lease file locations first
-  const candidates = [
+  // Try a broad set of lease file locations (NetworkManager-dnsmasq or plain dnsmasq)
+  const knownFiles = [
     "/run/NetworkManager/dnsmasq-Hotspot.leases",
     "/run/nm-dnsmasq-Hotspot.leases",
     "/var/lib/NetworkManager/dnsmasq-Hotspot.leases",
+    "/var/lib/misc/dnsmasq.leases",
   ];
+  const leaseDirs = ["/run/NetworkManager", "/var/lib/NetworkManager", "/run", "/var/lib/misc"];
 
-  let clients = [];
+  const leaseFiles = new Set(knownFiles);
+  for (const dir of leaseDirs) {
+    try {
+      const entries = fs.readdirSync(dir, { withFileTypes: true });
+      for (const entry of entries) {
+        if (entry.isFile() && /dnsmasq.*\.leases$/i.test(entry.name)) {
+          leaseFiles.add(path.join(dir, entry.name));
+        }
+      }
+    } catch (_) {}
+  }
+
+  const clientsByIp = new Map();
+
+  function upsertClient(ip, data) {
+    if (!ip) return;
+    const current = clientsByIp.get(ip) || {};
+    const merged = { ...current, ...data };
+    clientsByIp.set(ip, merged);
+  }
 
   function parseLeaseText(text) {
-    const out = [];
     const lines = text.split("\n");
     for (const line of lines) {
       const trimmed = line.trim();
       if (!trimmed) continue;
       const parts = trimmed.split(/\s+/);
-      let ip = null;
-      let mac = null;
-      let host = null;
+
+      let ip = parts[2] || null;
+      let mac = parts[1] || null;
+      let host = parts[3] || null;
+
+      // Fallback detection if the line is in an unexpected order
       for (const p of parts) {
         if (!ip && /^\d+\.\d+\.\d+\.\d+$/.test(p)) ip = p;
-        else if (!mac && /^([0-9a-f]{2}:){5}[0-9a-f]{2}$/i.test(p)) mac = p;
+        if (!mac && /^([0-9a-f]{2}:){5}[0-9a-f]{2}$/i.test(p)) mac = p;
       }
-      if (parts.length >= 4) {
-        const candidateHost = parts[3];
-        if (candidateHost && candidateHost !== "*") host = candidateHost;
-      }
+
+      if (host === "*" || host === "") host = null;
       if (ip && mac) {
-        out.push({ ip, mac, host });
+        upsertClient(ip, { ip, mac, host });
       }
     }
-    return out;
   }
 
-  for (const file of candidates) {
+  for (const file of leaseFiles) {
     if (fs.existsSync(file)) {
       try {
         const text = fs.readFileSync(file, "utf8");
-        clients = parseLeaseText(text);
-        if (clients.length > 0) return clients;
+        parseLeaseText(text);
       } catch (_) {}
     }
   }
@@ -284,13 +303,13 @@ function readHotspotClients() {
         const mac = parts[3];
         const dev = parts[5];
         if (dev === "wlan0" && /^10\.42\./.test(ip)) {
-          clients.push({ ip, mac, host: null });
+          upsertClient(ip, { ip, mac, host: clientsByIp.get(ip)?.host || null });
         }
       }
     }
   } catch (_) {}
 
-  return clients;
+  return Array.from(clientsByIp.values());
 }
 
 async function setEthState(action) {

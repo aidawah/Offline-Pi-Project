@@ -149,7 +149,7 @@ export function initNetwork(isActive) {
 
           tdIp.textContent = c.ip || "--";
           tdMac.textContent = c.mac || "--";
-          tdHost.textContent = c.host || "";
+          tdHost.textContent = c.host || "--";
 
           tr.appendChild(tdIp);
           tr.appendChild(tdMac);
