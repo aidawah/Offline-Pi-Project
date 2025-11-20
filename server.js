@@ -106,11 +106,48 @@ function readFanRpm() {
   return null;
 }
 
+function readInterfaceState(name) {
+  const state = {
+    operstate: null,
+    carrier: null,
+  };
+
+  try {
+    const raw = fs.readFileSync(`/sys/class/net/${name}/operstate`, "utf8");
+    state.operstate = raw.trim();
+  } catch (_) {}
+
+  try {
+    const raw = fs.readFileSync(`/sys/class/net/${name}/carrier`, "utf8");
+    const val = raw.trim();
+    if (val === "1") state.carrier = true;
+    else if (val === "0") state.carrier = false;
+  } catch (_) {}
+
+  return state;
+}
+
 function runCmd(cmd) {
   return new Promise((resolve) => {
     exec(cmd, { encoding: "utf8" }, (err, stdout) => {
       if (err || !stdout) return resolve("");
       resolve(stdout);
+    });
+  });
+}
+
+function execPromise(cmd) {
+  // Run a command and reject on failure so callers can surface errors
+  return new Promise((resolve, reject) => {
+    exec(cmd, { encoding: "utf8" }, (err, stdout, stderr) => {
+      if (err) {
+        const msg =
+          (stderr && stderr.toString().trim()) ||
+          (stdout && stdout.toString().trim()) ||
+          err.message;
+        return reject(new Error(msg || "Command failed"));
+      }
+      resolve({ stdout, stderr });
     });
   });
 }
@@ -140,14 +177,17 @@ function summarizeInterfaces(ipRouteText) {
   const ifacesRaw = os.networkInterfaces();
 
   function summarizeOne(name, type) {
+    const state = readInterfaceState(name);
     const info = {
       name,
-    type,
+      type,
       ipv4: null,
       ipv6: null,
       mac: null,
       gateway: null,
       up: false,
+      state: state.operstate,
+      carrier: state.carrier,
     };
     const entries = ifacesRaw[name] || [];
     for (const e of entries) {
@@ -160,6 +200,10 @@ function summarizeInterfaces(ipRouteText) {
       if (e.mac && e.mac !== "00:00:00:00:00:00") {
         info.mac = e.mac;
       }
+    }
+
+    if (state.operstate === "up") {
+      info.up = true;
     }
 
     const lines = ipRouteText.split("\n");
@@ -249,6 +293,45 @@ function readHotspotClients() {
   return clients;
 }
 
+async function setEthState(action) {
+  const desired = action === "down" ? "down" : "up";
+  // Try a few command paths with sudo -n to avoid password prompts
+  const commands = [
+    `sudo -n /sbin/ip link set eth0 ${desired}`,
+    `sudo -n ip link set eth0 ${desired}`,
+    `/sbin/ip link set eth0 ${desired}`,
+    `ip link set eth0 ${desired}`,
+  ];
+
+  let lastError = null;
+  for (const cmd of commands) {
+    try {
+      await execPromise(cmd);
+      return;
+    } catch (err) {
+      lastError = err;
+    }
+  }
+
+  throw lastError || new Error("Failed to change eth0 state");
+}
+
+async function getNetworkInfo() {
+  const ipRoute = await runCmd("ip route");
+  const nmActive = await runCmd(
+    "nmcli -t -f NAME,DEVICE,TYPE,STATE connection show --active"
+  );
+
+  const interfaces = summarizeInterfaces(ipRoute);
+  const clients = readHotspotClients();
+
+  return {
+    interfaces,
+    nmActive,
+    clients,
+  };
+}
+
 // ---------- System stats API ----------
 app.get("/api/system-stats", (req, res) => {
   const cpuTempC = readCpuTemp();
@@ -274,22 +357,41 @@ app.get("/api/system-stats", (req, res) => {
 // ---------- Network info API ----------
 app.get("/api/network-info", async (req, res) => {
   try {
-    const ipRoute = await runCmd("ip route");
-    const nmActive = await runCmd(
-      "nmcli -t -f NAME,DEVICE,TYPE,STATE connection show --active"
-    );
-
-    const interfaces = summarizeInterfaces(ipRoute);
-    const clients = readHotspotClients();
-
-    res.json({
-      interfaces,
-      nmActive,
-      clients,
-    });
+    const info = await getNetworkInfo();
+    res.json(info);
   } catch (err) {
     console.error("Network info error:", err);
     res.status(500).json({ error: "Failed to get network info" });
+  }
+});
+
+// ---------- Network control API (eth0 enable/disable) ----------
+app.post("/api/network/eth0", async (req, res) => {
+  const action =
+    typeof req.body?.action === "string"
+      ? req.body.action.toLowerCase()
+      : typeof req.body?.state === "string"
+        ? req.body.state.toLowerCase()
+        : null;
+
+  if (!action || (action !== "down" && action !== "up")) {
+    return res
+      .status(400)
+      .json({ error: "Invalid action. Use 'up' or 'down' for eth0." });
+  }
+
+  try {
+    await setEthState(action);
+    const info = await getNetworkInfo();
+    res.json({
+      message: `Ethernet ${action === "down" ? "disabled" : "enabled"}.`,
+      interfaces: info.interfaces,
+    });
+  } catch (err) {
+    console.error("Ethernet toggle error:", err.message);
+    res.status(500).json({
+      error: `Failed to ${action === "down" ? "disable" : "enable"} eth0: ${err.message}`,
+    });
   }
 });
 

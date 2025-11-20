@@ -5,7 +5,7 @@ Offline-friendly Raspberry Pi car dashboard with hotspot access, system stats, n
 ## What you get
 - Hotspot UI at `http://10.42.0.1:3000` (default); HTTPS on `3443` if enabled
 - System gauges: CPU temp/load, RAM, fan (if exposed), uptime
-- Networking: eth0/wlan0 details, hotspot clients
+- Networking: eth0/wlan0 details, hotspot clients, eth0 enable/disable toggle
 - Maps: Colorado-focused, street/topo toggle, quick jumps, saved camp location (named), “use my location” (GPS over HTTPS) with IP + saved fallback
 - Weather: 7-day snapshot, detail modal
 - Reboot: safe reboot button
@@ -117,6 +117,7 @@ curl -I http://localhost:8090/     # tileserver style endpoint (adjust if differ
 - TLS load fails: ensure the service user/group can read the key/cert (`chmod 640 key`, `chmod 644 cert`).
 - Location hangs: ensure HTTPS is used; otherwise rely on saved camp or IP.
 - Tiles missing: confirm your tileserver is running and `MAP_TILE_URL` points to it; check network access if using internet fallbacks.
+- Ethernet toggle errors: the dashboard calls `sudo -n ip link set eth0 up/down`; ensure your service user can run that without a password or run the service as root.
 
 ## Reboot test
 ```bash

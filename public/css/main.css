@@ -647,6 +647,17 @@ p {
   color: var(--muted);
   margin-top: 0.25rem;
 }
+.net-actions {
+  margin-top: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.net-note {
+  font-size: 0.75rem;
+  color: var(--muted);
+  line-height: 1.4;
+}
 .badge {
   display: inline-block;
   padding: 0.2rem 0.6rem;
@@ -660,6 +671,11 @@ p {
   background: rgba(248, 113, 113, 0.12);
   color: #fecaca;
   border-color: rgba(248, 113, 113, 0.5);
+}
+.badge.disabled {
+  background: rgba(148, 163, 184, 0.12);
+  color: #e5e7eb;
+  border-color: rgba(148, 163, 184, 0.45);
 }
 
 .clients-table {
