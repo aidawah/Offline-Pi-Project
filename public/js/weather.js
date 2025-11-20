@@ -9,6 +9,7 @@ export function initWeather(isActive) {
   const detailSummary = document.getElementById("detailSummary");
   const detailPrecip = document.getElementById("detailPrecip");
   const detailGrid = document.getElementById("detailGrid");
+  const weatherNameInput = document.getElementById("weatherNameInput");
   const weatherLatInput = document.getElementById("weatherLatInput");
   const weatherLonInput = document.getElementById("weatherLonInput");
   const weatherSaveBtn = document.getElementById("weatherSaveBtn");
@@ -29,21 +30,23 @@ export function initWeather(isActive) {
         Number.isFinite(Number(parsed.lat)) &&
         Number.isFinite(Number(parsed.lon))
       ) {
-        return { lat: Number(parsed.lat), lon: Number(parsed.lon) };
+        return { lat: Number(parsed.lat), lon: Number(parsed.lon), name: parsed.name || "" };
       }
     } catch (_) {}
     return null;
   }
 
-  function saveWeatherCoords(lat, lon) {
-    savedWeatherCoords = { lat, lon };
+  function saveWeatherCoords(lat, lon, name) {
+    savedWeatherCoords = { lat, lon, name: name || "" };
     localStorage.setItem(WEATHER_STORAGE_KEY, JSON.stringify(savedWeatherCoords));
     updateWeatherInputs(lat, lon);
+    if (weatherNameInput) weatherNameInput.value = name || "";
   }
 
-  function updateWeatherInputs(lat, lon) {
+  function updateWeatherInputs(lat, lon, name) {
     if (weatherLatInput && Number.isFinite(lat)) weatherLatInput.value = lat;
     if (weatherLonInput && Number.isFinite(lon)) weatherLonInput.value = lon;
+    if (weatherNameInput && typeof name === "string") weatherNameInput.value = name;
   }
 
   function weatherCodeMeta(code) {
@@ -210,13 +213,16 @@ export function initWeather(isActive) {
       const locBits = [];
       if (data.latitude != null) {
         locBits.push("Lat " + Number(data.latitude).toFixed(2));
-        updateWeatherInputs(Number(data.latitude), Number(data.longitude));
+        updateWeatherInputs(Number(data.latitude), Number(data.longitude), savedWeatherCoords?.name || "");
       }
       if (data.longitude != null) {
         locBits.push("Lon " + Number(data.longitude).toFixed(2));
       }
       if (data.timezone) locBits.push(data.timezone);
-      weatherLocation.textContent = locBits.join(" | ") || "Forecast location";
+      weatherLocation.textContent =
+        (savedWeatherCoords && savedWeatherCoords.name) ||
+        locBits.join(" | ") ||
+        "Forecast location";
 
       weatherStatus.textContent = "Updated " + new Date().toLocaleTimeString();
       lastWeatherFetch = now;
@@ -244,11 +250,12 @@ export function initWeather(isActive) {
     weatherSaveBtn.addEventListener("click", () => {
       const lat = weatherLatInput ? parseFloat(weatherLatInput.value) : null;
       const lon = weatherLonInput ? parseFloat(weatherLonInput.value) : null;
+      const name = weatherNameInput ? weatherNameInput.value.trim() : "";
       if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
         weatherStatus.textContent = "Enter a valid latitude and longitude.";
         return;
       }
-      saveWeatherCoords(lat, lon);
+      saveWeatherCoords(lat, lon, name);
       updateWeather(true);
     });
   }
@@ -260,7 +267,11 @@ export function initWeather(isActive) {
   }
 
   if (savedWeatherCoords) {
-    updateWeatherInputs(savedWeatherCoords.lat, savedWeatherCoords.lon);
+    updateWeatherInputs(
+      savedWeatherCoords.lat,
+      savedWeatherCoords.lon,
+      savedWeatherCoords.name || ""
+    );
   }
 
   return {
