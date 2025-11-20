@@ -384,6 +384,79 @@
         color: var(--muted);
       }
 
+      /* Weather */
+      .weather-hero {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+        flex-wrap: wrap;
+      }
+      .weather-pill {
+        padding: 0.65rem 1rem;
+        border-radius: 999px;
+        background: linear-gradient(135deg, #0ea5e9, #7c3aed);
+        color: #e0f2fe;
+        border: 1px solid rgba(59, 130, 246, 0.5);
+        box-shadow: 0 10px 28px rgba(59, 130, 246, 0.35);
+        font-size: 0.85rem;
+      }
+      .weather-grid {
+        margin-top: 1.2rem;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 0.9rem;
+      }
+      .weather-day {
+        position: relative;
+        padding: 1rem;
+        border-radius: 1rem;
+        background: radial-gradient(circle at 30% 0, #0b1224, #050915);
+        border: 1px solid rgba(59, 130, 246, 0.35);
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.55);
+        overflow: hidden;
+      }
+      .weather-day::before {
+        content: "";
+        position: absolute;
+        inset: -30%;
+        background: radial-gradient(circle at 100% 0, rgba(34, 211, 238, 0.12), transparent);
+        pointer-events: none;
+      }
+      .weather-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.5rem;
+      }
+      .weather-icon {
+        font-size: 1rem;
+        font-weight: 700;
+        color: var(--accent);
+        letter-spacing: 0.08em;
+      }
+      .weather-label {
+        color: var(--muted);
+        font-size: 0.85rem;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+      .weather-temp {
+        margin-top: 0.4rem;
+        font-size: 1.35rem;
+        font-weight: 700;
+      }
+      .weather-sub {
+        margin-top: 0.2rem;
+        font-size: 0.85rem;
+        color: var(--muted);
+      }
+      .weather-prob {
+        margin-top: 0.4rem;
+        font-size: 0.85rem;
+        color: #93c5fd;
+      }
+
       code {
         background: #020617;
         padding: 0.12rem 0.35rem;
@@ -401,6 +474,7 @@
       <nav>
         <button class="nav-btn active" data-view="home">Home</button>
         <button class="nav-btn" data-view="system">System</button>
+        <button class="nav-btn" data-view="weather">Weather</button>
         <button class="nav-btn" data-view="network">Networking</button>
       </nav>
     </header>
@@ -525,6 +599,28 @@
         </div>
       </section>
 
+      <!-- WEATHER VIEW -->
+      <section id="view-weather" class="view">
+        <div class="card">
+          <div class="weather-hero">
+            <div>
+              <h1>7-Day Forecast</h1>
+              <p>
+                Quick snapshot of the coming week. Set
+                <code>WEATHER_LAT</code> and <code>WEATHER_LON</code> to tune the
+                location.
+              </p>
+            </div>
+            <div class="weather-pill" id="weatherLocation">
+              Loading location...
+            </div>
+          </div>
+
+          <div class="weather-grid" id="weatherGrid"></div>
+          <div class="status" id="weatherStatus"></div>
+        </div>
+      </section>
+
       <!-- NETWORKING VIEW -->
       <section id="view-network" class="view">
         <div class="card">
@@ -586,6 +682,7 @@
       const views = {
         home: document.getElementById("view-home"),
         system: document.getElementById("view-system"),
+        weather: document.getElementById("view-weather"),
         network: document.getElementById("view-network"),
       };
 
@@ -598,8 +695,118 @@
           Object.entries(views).forEach(([key, el]) => {
             el.classList.toggle("active", key === view);
           });
+
+          if (view === "weather") {
+            updateWeather();
+          }
         });
       });
+
+      // -------- WEATHER --------
+      const weatherGrid = document.getElementById("weatherGrid");
+      const weatherStatus = document.getElementById("weatherStatus");
+      const weatherLocation = document.getElementById("weatherLocation");
+      let lastWeatherFetch = 0;
+
+      function weatherCodeMeta(code) {
+        const numeric = Number(code);
+        const mappedCode = Number.isFinite(numeric) ? numeric : null;
+        const buckets = [
+          { codes: [0], meta: { icon: "SUN", label: "Clear sky" } },
+          { codes: [1, 2], meta: { icon: "PART", label: "Partly cloudy" } },
+          { codes: [3], meta: { icon: "CLOUD", label: "Overcast" } },
+          { codes: [45, 48], meta: { icon: "FOG", label: "Foggy" } },
+          { codes: [51, 53, 55, 56, 57], meta: { icon: "DRIZ", label: "Drizzle" } },
+          { codes: [61, 63, 65, 80, 81, 82], meta: { icon: "RAIN", label: "Rain showers" } },
+          { codes: [66, 67], meta: { icon: "ICE", label: "Freezing rain" } },
+          { codes: [71, 73, 75, 77, 85, 86], meta: { icon: "SNOW", label: "Snow" } },
+          { codes: [95, 96, 99], meta: { icon: "STORM", label: "Thunder" } },
+        ];
+
+        for (const bucket of buckets) {
+          if (bucket.codes.includes(mappedCode)) return bucket.meta;
+        }
+        return { icon: "VAR", label: "Variable sky" };
+      }
+
+      function formatDateLabel(dateStr) {
+        if (!dateStr) return "Unknown date";
+        const date = new Date(dateStr + "T12:00:00");
+        if (isNaN(date.getTime())) return dateStr;
+        const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+        const month = date.getMonth() + 1;
+        const day = date.getDate();
+        return days[date.getDay()] + " " + month + "/" + day;
+      }
+
+      function renderWeather(days) {
+        weatherGrid.innerHTML = "";
+        days.slice(0, 7).forEach((day) => {
+          const meta = weatherCodeMeta(day.weatherCode);
+          const hi = Number.isFinite(Number(day.tempMax))
+            ? Math.round(Number(day.tempMax)) + "C"
+            : "--";
+          const lo = Number.isFinite(Number(day.tempMin))
+            ? Math.round(Number(day.tempMin)) + "C"
+            : "--";
+          const precipParts = [];
+          if (Number.isFinite(Number(day.precipProb))) {
+            precipParts.push(Number(day.precipProb) + "% chance");
+          }
+          if (Number.isFinite(Number(day.precipHours))) {
+            precipParts.push(Number(day.precipHours).toFixed(1) + "h precip");
+          }
+          const precipText = precipParts.join(" | ") || "Precip data n/a";
+
+          const card = document.createElement("div");
+          card.className = "weather-day";
+          card.innerHTML = `
+            <div class="weather-top">
+              <div class="weather-label">${formatDateLabel(day.date)}</div>
+              <div class="weather-icon">${meta.icon}</div>
+            </div>
+            <div class="weather-temp">${hi} / ${lo}</div>
+            <div class="weather-sub">${meta.label}</div>
+            <div class="weather-prob">${precipText}</div>
+          `;
+          weatherGrid.appendChild(card);
+        });
+      }
+
+      async function updateWeather() {
+        const now = Date.now();
+        if (now - lastWeatherFetch < 60000 && weatherGrid.children.length) {
+          return;
+        }
+        weatherStatus.textContent = "Loading forecast...";
+        try {
+          const res = await fetch("/api/weather");
+          if (!res.ok) throw new Error("HTTP " + res.status);
+          const data = await res.json();
+          if (!data || !Array.isArray(data.days)) {
+            throw new Error("No forecast data");
+          }
+
+          renderWeather(data.days);
+
+          const locBits = [];
+          if (data.latitude != null) locBits.push("Lat " + Number(data.latitude).toFixed(2));
+          if (data.longitude != null) locBits.push("Lon " + Number(data.longitude).toFixed(2));
+          if (data.timezone) locBits.push(data.timezone);
+          weatherLocation.textContent = locBits.join(" | ") || "Forecast location";
+
+          weatherStatus.textContent = "Updated " + new Date().toLocaleTimeString();
+          lastWeatherFetch = now;
+        } catch (err) {
+          weatherStatus.textContent = "Could not load weather: " + err.message;
+        }
+      }
+
+      setInterval(() => {
+        if (views.weather.classList.contains("active")) {
+          updateWeather();
+        }
+      }, 15 * 60 * 1000);
 
       // -------- GAUGE / STATS --------
       const gaugeRings = {
@@ -854,6 +1061,7 @@
         }
       }, 5000);
       updateNetwork();
+      updateWeather();
     </script>
   </body>
 </html>

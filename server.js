@@ -1,14 +1,29 @@
 const express = require("express");
 const { exec } = require("child_process");
+const https = require("https");
 const path = require("path");
 const os = require("os");
 const fs = require("fs");
 
 const app = express();
 const PORT = 3000;
+const WEATHER_LAT = Number.isFinite(parseFloat(process.env.WEATHER_LAT))
+  ? parseFloat(process.env.WEATHER_LAT)
+  : 40.7128;
+const WEATHER_LON = Number.isFinite(parseFloat(process.env.WEATHER_LON))
+  ? parseFloat(process.env.WEATHER_LON)
+  : -74.006;
+const WEATHER_CACHE_MS = 15 * 60 * 1000;
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
+
+let weatherCache = {
+  ts: 0,
+  lat: WEATHER_LAT,
+  lon: WEATHER_LON,
+  data: null,
+};
 
 // ---------- Helpers ----------
 function readCpuTemp() {
@@ -58,6 +73,27 @@ function runCmd(cmd) {
       if (err || !stdout) return resolve("");
       resolve(stdout);
     });
+  });
+}
+
+function fetchJson(url) {
+  return new Promise((resolve, reject) => {
+    https
+      .get(url, (resp) => {
+        let data = "";
+        resp.on("data", (chunk) => {
+          data += chunk;
+        });
+        resp.on("end", () => {
+          try {
+            const json = JSON.parse(data);
+            resolve(json);
+          } catch (err) {
+            reject(err);
+          }
+        });
+      })
+      .on("error", (err) => reject(err));
   });
 }
 
@@ -227,6 +263,83 @@ app.post("/api/reboot", (req, res) => {
     }
     res.json({ message: "Rebooting..." });
   });
+});
+
+// ---------- Weather API ----------
+app.get("/api/weather", async (req, res) => {
+  const lat = Number.isFinite(parseFloat(req.query.lat))
+    ? parseFloat(req.query.lat)
+    : parseFloat(WEATHER_LAT);
+  const lon = Number.isFinite(parseFloat(req.query.lon))
+    ? parseFloat(req.query.lon)
+    : parseFloat(WEATHER_LON);
+
+  const now = Date.now();
+  const cacheValid =
+    weatherCache.data &&
+    weatherCache.lat === lat &&
+    weatherCache.lon === lon &&
+    now - weatherCache.ts < WEATHER_CACHE_MS;
+
+  if (cacheValid) {
+    return res.json(weatherCache.data);
+  }
+
+  const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=weathercode,temperature_2m_max,temperature_2m_min,precipitation_probability_mean,precipitation_hours&timezone=auto&forecast_days=7`;
+
+  try {
+    const json = await fetchJson(url);
+    if (!json || !json.daily || !Array.isArray(json.daily.time)) {
+      throw new Error("Malformed response from weather provider");
+    }
+
+    const days = json.daily.time.map((date, idx) => ({
+      date,
+      weatherCode:
+        json.daily.weathercode && json.daily.weathercode[idx] != null
+          ? json.daily.weathercode[idx]
+          : null,
+      tempMax:
+        json.daily.temperature_2m_max &&
+        json.daily.temperature_2m_max[idx] != null
+          ? json.daily.temperature_2m_max[idx]
+          : null,
+      tempMin:
+        json.daily.temperature_2m_min &&
+        json.daily.temperature_2m_min[idx] != null
+          ? json.daily.temperature_2m_min[idx]
+          : null,
+      precipProb:
+        json.daily.precipitation_probability_mean &&
+        json.daily.precipitation_probability_mean[idx] != null
+          ? json.daily.precipitation_probability_mean[idx]
+          : null,
+      precipHours:
+        json.daily.precipitation_hours &&
+        json.daily.precipitation_hours[idx] != null
+          ? json.daily.precipitation_hours[idx]
+          : null,
+    }));
+
+    const payload = {
+      latitude: json.latitude,
+      longitude: json.longitude,
+      timezone: json.timezone,
+      days,
+    };
+
+    weatherCache = {
+      ts: now,
+      lat,
+      lon,
+      data: payload,
+    };
+
+    res.json(payload);
+  } catch (err) {
+    console.error("Weather API error:", err.message);
+    res.status(500).json({ error: "Failed to load weather forecast" });
+  }
 });
 
 app.listen(PORT, () => {
