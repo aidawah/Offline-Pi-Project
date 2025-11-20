@@ -369,8 +369,11 @@
                 <code>WEATHER_LAT</code> and <code>WEATHER_LON</code> to match your spot.
               </p>
             </div>
-            <div class="weather-pill" id="weatherLocation">
-              Loading location...
+            <div class="weather-meta">
+              <div class="weather-pill" id="weatherLocation">Loading location...</div>
+              <button class="weather-refresh-btn" id="weatherRefreshBtn" title="Refresh forecast">
+                &#x21bb;
+              </button>
             </div>
           </div>
 
@@ -401,7 +404,7 @@
             <div class="weather-actions">
               <button class="map-btn" id="weatherSaveBtn">Use this location</button>
               <button class="map-btn subtle" id="weatherDefaultBtn">Use default (Denver)</button>
-              <button class="map-btn subtle" id="weatherRefreshBtn">Refresh now</button>
+              <button class="map-btn subtle" id="weatherSavedBtn">Use saved</button>
             </div>
           </div>
 

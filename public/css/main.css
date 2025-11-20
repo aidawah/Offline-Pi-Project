@@ -693,6 +693,11 @@ p {
   gap: 1rem;
   flex-wrap: wrap;
 }
+.weather-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
 .weather-pill {
   padding: 0.65rem 1rem;
   border-radius: 999px;
@@ -701,6 +706,26 @@ p {
   border: 1px solid rgba(59, 130, 246, 0.5);
   box-shadow: 0 10px 28px rgba(59, 130, 246, 0.35);
   font-size: 0.85rem;
+}
+.weather-refresh-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid rgba(148, 163, 184, 0.45);
+  background: rgba(15, 23, 42, 0.9);
+  color: var(--text);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.08s ease, border-color 0.15s ease, background 0.15s ease;
+}
+.weather-refresh-btn:hover {
+  border-color: var(--accent);
+  background: rgba(14, 165, 233, 0.16);
+}
+.weather-refresh-btn:active {
+  transform: scale(0.95);
 }
 .weather-grid {
   margin-top: 1.2rem;
