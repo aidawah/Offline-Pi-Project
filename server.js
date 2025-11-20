@@ -170,6 +170,53 @@ async function readIwStations() {
   return "";
 }
 
+const HOST_CACHE_TTL_MS = 10 * 60 * 1000;
+const hostCache = new Map();
+
+async function resolveClientHost(ip, leaseHost) {
+  if (!ip) return leaseHost || null;
+  if (leaseHost) {
+    hostCache.set(ip, { host: leaseHost, ts: Date.now() });
+    return leaseHost;
+  }
+
+  const cached = hostCache.get(ip);
+  if (cached && Date.now() - cached.ts < HOST_CACHE_TTL_MS) {
+    return cached.host;
+  }
+
+  const candidates = [
+    `avahi-resolve-address -4 ${ip}`,
+    `getent hosts ${ip}`,
+  ];
+
+  for (const cmd of candidates) {
+    try {
+      const { stdout } = await execPromise(cmd);
+      if (!stdout) continue;
+      const line = stdout.trim().split("\n")[0];
+      if (!line) continue;
+
+      let host = null;
+      if (cmd.startsWith("avahi-resolve-address")) {
+        const parts = line.trim().split(/\s+/);
+        if (parts.length >= 2) host = parts[1];
+      } else {
+        const parts = line.trim().split(/\s+/);
+        if (parts.length >= 2) host = parts[1];
+      }
+
+      if (host && host !== ip) {
+        hostCache.set(ip, { host, ts: Date.now() });
+        return host;
+      }
+    } catch (_) {}
+  }
+
+  hostCache.set(ip, { host: null, ts: Date.now() });
+  return null;
+}
+
 function fetchJson(url) {
   return new Promise((resolve, reject) => {
     https
@@ -298,11 +345,22 @@ async function readHotspotClients() {
   }
 
   for (const file of leaseFiles) {
-    if (fs.existsSync(file)) {
+    if (!fs.existsSync(file)) continue;
+    let text = null;
+    try {
+      text = fs.readFileSync(file, "utf8");
+    } catch (_) {}
+
+    // If direct read fails (permissions), try sudo -n cat
+    if (!text) {
       try {
-        const text = fs.readFileSync(file, "utf8");
-        parseLeaseText(text);
+        const { stdout } = await execPromise(`sudo -n cat ${file}`);
+        text = stdout;
       } catch (_) {}
+    }
+
+    if (text) {
+      parseLeaseText(text);
     }
   }
 
@@ -357,7 +415,14 @@ async function readHotspotClients() {
     });
   }
 
-  return clients;
+  const withHosts = await Promise.all(
+    clients.map(async (c) => {
+      const resolvedHost = await resolveClientHost(c.ip, c.host);
+      return { ...c, host: resolvedHost };
+    })
+  );
+
+  return withHosts;
 }
 
 async function setEthState(action) {
