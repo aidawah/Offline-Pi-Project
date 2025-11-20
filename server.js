@@ -152,6 +152,24 @@ function execPromise(cmd) {
   });
 }
 
+async function readIwStations() {
+  // Try multiple invocations to handle PATH differences and sudo needs
+  const cmds = [
+    "sudo -n /usr/sbin/iw dev wlan0 station dump",
+    "sudo -n iw dev wlan0 station dump",
+    "/usr/sbin/iw dev wlan0 station dump",
+    "iw dev wlan0 station dump",
+  ];
+
+  for (const cmd of cmds) {
+    try {
+      const { stdout } = await execPromise(cmd);
+      if (stdout && stdout.trim()) return stdout;
+    } catch (_) {}
+  }
+  return "";
+}
+
 function fetchJson(url) {
   return new Promise((resolve, reject) => {
     https
@@ -288,7 +306,7 @@ async function readHotspotClients() {
     }
   }
 
-  const stationDump = await runCmd("iw dev wlan0 station dump");
+  const stationDump = await readIwStations();
   const stationMacs = new Set();
   if (stationDump) {
     const lines = stationDump.split("\n");
@@ -298,6 +316,10 @@ async function readHotspotClients() {
         stationMacs.add(match[1].toLowerCase());
       }
     }
+  }
+
+  if (stationMacs.size === 0) {
+    return [];
   }
 
   const arpEntries = [];
@@ -325,25 +347,14 @@ async function readHotspotClients() {
   } catch (_) {}
 
   const clients = [];
-  if (stationMacs.size > 0) {
-    for (const mac of stationMacs) {
-      const arp = arpEntries.find((a) => a.mac === mac);
-      const lease = leasesByMac.get(mac) || (arp?.ip ? leasesByIp.get(arp.ip) : null);
-      clients.push({
-        ip: arp?.ip || lease?.ip || null,
-        mac,
-        host: lease?.host || null,
-      });
-    }
-  } else {
-    for (const arp of arpEntries) {
-      const lease = leasesByIp.get(arp.ip) || leasesByMac.get(arp.mac);
-      clients.push({
-        ip: arp.ip,
-        mac: arp.mac,
-        host: lease?.host || null,
-      });
-    }
+  for (const mac of stationMacs) {
+    const arp = arpEntries.find((a) => a.mac === mac);
+    const lease = leasesByMac.get(mac) || (arp?.ip ? leasesByIp.get(arp.ip) : null);
+    clients.push({
+      ip: arp?.ip || lease?.ip || null,
+      mac,
+      host: lease?.host || null,
+    });
   }
 
   return clients;
