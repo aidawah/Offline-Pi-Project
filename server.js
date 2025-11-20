@@ -348,16 +348,17 @@ async function readHotspotClients() {
   }
 
   for (const file of leaseFiles) {
-    if (!fs.existsSync(file)) continue;
     let text = null;
     let readErr = null;
     try {
-      text = fs.readFileSync(file, "utf8");
+      if (fs.existsSync(file)) {
+        text = fs.readFileSync(file, "utf8");
+      }
     } catch (err) {
       readErr = err;
     }
 
-    // If direct read fails (permissions), try sudo -n cat
+    // If direct read fails (permissions or missing), try sudo -n cat anyway
     if (!text) {
       try {
         const { stdout } = await execPromise(`sudo -n cat ${file}`);
