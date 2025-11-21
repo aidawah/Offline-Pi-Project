@@ -26,145 +26,81 @@
     <main>
       <!-- HOME VIEW -->
       <section id="view-home" class="view active">
-        <div class="home-hero">
-          <div class="hero-overlay"></div>
-          <div class="hero-body">
-            <span class="hero-eyebrow">
-              <span class="dot"></span>
-              Camp ready
-            </span>
-            <h1 class="hero-title">
-              Campfire control for your mountain base.
-            </h1>
-            <p class="hero-lede">
-              Kick back by the fire while the Pi keeps watch. Check temps, jump to the map,
-              and peek at the forecast without leaving your camp chair.
-            </p>
-            <div class="hero-badges">
-              <span class="pill"><span class="dot"></span>Offline hotspot</span>
-              <span class="pill soft">HD mountain map</span>
-              <span class="pill soft">Weather-aware</span>
-            </div>
-            <div class="hero-actions">
-              <button class="cta" data-nav-target="system">Open System View</button>
-              <button class="cta ghost" data-nav-target="map">Check Colorado Map</button>
-              <div class="hotspot-callout">
-                <div class="dot"></div>
-                <span>
-                  Connect to <strong>PiCarCam</strong> then visit
-                  <code>http://10.42.0.1:3000</code>
-                </span>
+        <div class="home-shell">
+          <div class="home-hero">
+            <div class="hero-copy">
+              <p class="eyebrow">Offline Pi dashboard</p>
+              <h1 class="hero-title">Control the essentials without the clutter.</h1>
+              <p class="hero-lede">
+                Jump straight to stats, the Colorado map, the forecast, or hotspot clients in
+                two clicks.
+              </p>
+              <div class="hero-actions">
+                <button class="cta" data-nav-target="system">Open system</button>
+                <button class="cta ghost" data-nav-target="map">Open map</button>
+                <button class="link-btn" data-nav-target="network">Hotspot clients</button>
+              </div>
+              <div class="hero-meta">
+                <div class="meta-item">
+                  <span class="meta-label">Hotspot</span>
+                  <span class="meta-value strong">PiCarCam</span>
+                </div>
+                <div class="meta-item">
+                  <span class="meta-label">Dashboard</span>
+                  <span class="meta-value"><code>10.42.0.1:3000</code></span>
+                </div>
+                <div class="meta-item">
+                  <span class="meta-label">Views</span>
+                  <span class="meta-value">System · Map · Weather · Network</span>
+                </div>
               </div>
             </div>
-          </div>
-          <div class="hero-sidecard">
-            <div class="card-heading">Tonight's basecamp</div>
-            <div class="signal">
-              <div class="dot"></div>
-              <div>
-                System stats
-                <small>Temp + load in the System tab.</small>
-              </div>
-            </div>
-            <div class="signal">
-              <div class="dot"></div>
-              <div>
-                Trail-ready map
-                <small>Colorado focus with quick jumps to parks & peaks.</small>
-              </div>
-            </div>
-            <div class="signal">
-              <div class="dot"></div>
-              <div>
-                Weather pulse
-                <small>Seven-day outlook before the hike.</small>
-              </div>
-            </div>
-            <div class="stat-row">
-              <div class="stat-pill">
-                Offline mode
-                <span style="color: var(--muted); font-size: 0.85rem">Hotspot on</span>
-              </div>
-              <div class="stat-pill">
-                Map lock
-                <span style="color: var(--muted); font-size: 0.85rem">Colorado</span>
-              </div>
-            </div>
-          </div>
-        </div>
 
-        <div class="home-grid">
-          <div class="home-panel">
-            <div class="panel-title">How to connect</div>
-            <p>Keep everyone on the camp network in under a minute.</p>
-            <ul class="quick-steps">
-              <li>
-                <div class="step-tag">1</div>
-                <div>
-                  Join the Wi-Fi named <strong>PiCarCam</strong> from your phone or
-                  laptop.
-                </div>
-              </li>
-              <li>
-                <div class="step-tag">2</div>
-                <div>
-                  Open <code>http://10.42.0.1:3000</code> in the browser for this
-                  dashboard.
-                </div>
-              </li>
-              <li>
-                <div class="step-tag">3</div>
-                <div>
-                  Hop into <strong>System</strong> for temps, or
-                  <strong>Networking</strong> to see who's on the hotspot.
-                </div>
-              </li>
-            </ul>
+            <div class="hero-card">
+              <div class="card-heading">Quick start</div>
+              <ol class="quick-steps compact">
+                <li>
+                  <div class="step-tag">1</div>
+                  <div>Connect to Wi‑Fi <strong>PiCarCam</strong>.</div>
+                </li>
+                <li>
+                  <div class="step-tag">2</div>
+                  <div>Go to <code>10.42.0.1:3000</code>.</div>
+                </li>
+                <li>
+                  <div class="step-tag">3</div>
+                  <div>Pick a view below.</div>
+                </li>
+              </ol>
+              <div class="hero-mini-grid">
+                <button class="mini-tile" data-nav-target="system">System health</button>
+                <button class="mini-tile" data-nav-target="map">Colorado map</button>
+                <button class="mini-tile" data-nav-target="weather">Forecast</button>
+                <button class="mini-tile" data-nav-target="network">Hotspot clients</button>
+              </div>
+            </div>
           </div>
 
-          <div class="home-panel">
-            <div class="panel-title">Quick launch</div>
-            <p>Jump straight to what you need around the fire.</p>
-            <div class="mini-grid">
-              <div class="mini-card">
-                System gauges
-                <span>CPU temp, load, memory, fan (if available).</span>
-              </div>
-              <div class="mini-card">
-                Colorado map
-                <span>Key towns, parks, and peaks with a topo toggle.</span>
-              </div>
-              <div class="mini-card">
-                Networking
-                <span>Hotspot clients and IP info at a glance.</span>
-              </div>
-              <div class="mini-card">
-                Weather outlook
-                <span>Seven-day forecast before you pack up.</span>
-              </div>
+          <div class="home-feature-grid">
+            <div class="feature-card">
+              <div class="feature-title">System</div>
+              <p>Watch CPU temp, load, memory, and fan speed without digging.</p>
+              <button class="map-btn subtle" data-nav-target="system">Open system view</button>
             </div>
-            <a class="home-link" data-nav-target="weather" href="javascript:void(0)">
-              Check the week ahead
-              <small>Opens Weather</small>
-            </a>
-          </div>
-
-          <div class="home-panel">
-            <div class="panel-title">Camp vibe</div>
-            <p>Dial in the scene so the crew knows you're in mountain mode.</p>
-            <div class="mini-grid">
-              <div class="mini-card">
-                Beacon
-                <span>Keep the hotspot name visible: PiCarCam</span>
-              </div>
-              <div class="mini-card">
-                Safety
-                <span>Reboot from System tab if temps spike.</span>
-              </div>
-              <div class="mini-card">
-                Orientation
-                <span>Use Map quick jumps to land on your trailhead.</span>
-              </div>
+            <div class="feature-card">
+              <div class="feature-title">Map</div>
+              <p>Colorado-focused map with saved camp pins and quick jumps.</p>
+              <button class="map-btn subtle" data-nav-target="map">Jump to map</button>
+            </div>
+            <div class="feature-card">
+              <div class="feature-title">Weather</div>
+              <p>Seven-day forecast with your saved coordinates and quick refresh.</p>
+              <button class="map-btn subtle" data-nav-target="weather">Check forecast</button>
+            </div>
+            <div class="feature-card">
+              <div class="feature-title">Hotspot</div>
+              <p>See who is connected on wlan0 and toggle Ethernet if needed.</p>
+              <button class="map-btn subtle" data-nav-target="network">View networking</button>
             </div>
           </div>
         </div>
