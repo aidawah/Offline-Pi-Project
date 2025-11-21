@@ -4,6 +4,7 @@ Offline-friendly Raspberry Pi car dashboard with hotspot access, system stats, n
 
 ## What you get
 - Hotspot UI at `http://10.42.0.1:3000` (default); HTTPS on `3443` if enabled
+- Camera view for the Arducam 5MP IMX335 (Sony STARVIS) with live stream embed, libcamera status, and on-demand snapshots
 - System gauges: CPU temp/load, RAM, fan (if exposed), uptime
 - Networking: eth0/wlan0 details, hotspot clients, eth0 enable/disable toggle
 - Maps: Colorado-focused, street/topo toggle, quick jumps, saved camp location (named), “use my location” (GPS over HTTPS) with IP + saved fallback
@@ -85,6 +86,11 @@ Point `MAP_TILE_URL` at the served style/tiles. For plain raster folders, serve 
   - “Use saved spot” jumps to your saved camp. “Remove saved camp” clears it.
   - Quick jumps include your saved camp (if set) plus Colorado staples.
   - Layer toggle for street/topo; Reset view returns to statewide bounds.
+- Camera:
+  - Shows status for the Arducam IMX335 (libcamera presence, /dev/video nodes) and your configured stream URL.
+  - “Open stream” uses `CAMERA_STREAM_URL` (MJPEG/HTTP/RTSP). Add a `libcamera-vid` pipeline and point the envvar at it.
+  - “Capture still” calls `libcamera-still` for a quick JPEG preview (defaults to `CAMERA_STILL_WIDTH` x `CAMERA_STILL_HEIGHT`, capped at 2592x1944).
+  - Download the last still or adjust the resolution inline.
 - Weather: 7-day at configured lat/lon (`WEATHER_LAT`, `WEATHER_LON` envs), detail modal on click.
 - System: live gauges (CPU temp, load, RAM, fan if exposed), reboot button.
 - Networking: eth0/wlan0 IP/gateway/status and hotspot clients table.
@@ -93,6 +99,7 @@ Point `MAP_TILE_URL` at the served style/tiles. For plain raster folders, serve 
 - `PORT`, `HTTPS_PORT`
 - `PICO_TLS_KEY_PATH`, `PICO_TLS_CERT_PATH`
 - `WEATHER_LAT`, `WEATHER_LON`
+- Camera: `CAMERA_STREAM_URL` (live view target), `CAMERA_STILL_WIDTH`, `CAMERA_STILL_HEIGHT` (defaults 1600x900)
 - Tile envs: `MAP_TILE_URL`, `MAP_TILE_ATTRIB`, `MAP_TILE_FALLBACK_URL`, `MAP_TILE_MAX_ZOOM`, `MAP_TILE_MAX_NATIVE_ZOOM`
 
 ## Verify services and ports

@@ -1,5 +1,5 @@
 const express = require("express");
-const { exec } = require("child_process");
+const { exec, spawn } = require("child_process");
 const https = require("https");
 const http = require("http");
 const path = require("path");
@@ -36,6 +36,13 @@ const MAP_TILE_FALLBACK_URL =
   "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"; // only used if local tiles fail
 const MAP_TILE_FALLBACK_ATTRIB =
   process.env.MAP_TILE_FALLBACK_ATTRIB || "(c) OpenStreetMap contributors";
+const CAMERA_STREAM_URL = process.env.CAMERA_STREAM_URL || "http://10.42.0.1:8554/stream.mjpg";
+const CAMERA_STILL_WIDTH = Number.isFinite(parseInt(process.env.CAMERA_STILL_WIDTH, 10))
+  ? parseInt(process.env.CAMERA_STILL_WIDTH, 10)
+  : 1600;
+const CAMERA_STILL_HEIGHT = Number.isFinite(parseInt(process.env.CAMERA_STILL_HEIGHT, 10))
+  ? parseInt(process.env.CAMERA_STILL_HEIGHT, 10)
+  : 900;
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
@@ -58,6 +65,18 @@ app.get("/config.js", (req, res) => {
       maxNativeZoom: MAP_TILE_MAX_NATIVE_ZOOM,
       fallbackUrl: MAP_TILE_FALLBACK_URL,
       fallbackAttribution: MAP_TILE_FALLBACK_ATTRIB,
+    },
+    camera: {
+      streamUrl: CAMERA_STREAM_URL || null,
+      module: "Arducam 5MP IMX335 Low-Light (Sony STARVIS)",
+      maxStill: {
+        width: 2592,
+        height: 1944,
+      },
+      snapshotDefault: {
+        width: CAMERA_STILL_WIDTH,
+        height: CAMERA_STILL_HEIGHT,
+      },
     },
   };
   res
@@ -133,6 +152,78 @@ function runCmd(cmd) {
     exec(cmd, { encoding: "utf8" }, (err, stdout) => {
       if (err || !stdout) return resolve("");
       resolve(stdout);
+    });
+  });
+}
+
+function listVideoDevices() {
+  try {
+    const entries = fs.readdirSync("/dev");
+    return entries
+      .filter((name) => /^video\d+/.test(name))
+      .map((name) => path.join("/dev", name));
+  } catch (_) {
+    return [];
+  }
+}
+
+async function hasLibcameraBinary() {
+  const knownPaths = ["/usr/bin/libcamera-still", "/usr/local/bin/libcamera-still"];
+  if (knownPaths.some((p) => fs.existsSync(p))) return true;
+  try {
+    const out = await runCmd("command -v libcamera-still");
+    return !!out.trim();
+  } catch (_) {
+    return false;
+  }
+}
+
+function captureStill(width, height) {
+  return new Promise((resolve, reject) => {
+    const w = Math.max(320, Math.min(Number(width) || CAMERA_STILL_WIDTH, 2592));
+    const h = Math.max(240, Math.min(Number(height) || CAMERA_STILL_HEIGHT, 1944));
+    const args = [
+      "-n",
+      "-t",
+      "1",
+      "--immediate",
+      "--width",
+      String(w),
+      "--height",
+      String(h),
+      "-o",
+      "-",
+    ];
+
+    const child = spawn("libcamera-still", args, { stdio: ["ignore", "pipe", "pipe"] });
+    const chunks = [];
+    let stderr = "";
+    const timeout = setTimeout(() => {
+      stderr += "Timed out capturing still. ";
+      child.kill("SIGTERM");
+    }, 8000);
+
+    child.stdout.on("data", (d) => chunks.push(d));
+    child.stderr.on("data", (d) => {
+      stderr += d.toString();
+    });
+    child.on("error", (err) => {
+      clearTimeout(timeout);
+      reject(err);
+    });
+    child.on("close", (code) => {
+      clearTimeout(timeout);
+      if (code !== 0) {
+        return reject(new Error(stderr.trim() || "libcamera-still failed"));
+      }
+      if (!chunks.length) {
+        return reject(new Error("No image returned from camera"));
+      }
+      resolve({
+        buffer: Buffer.concat(chunks),
+        width: w,
+        height: h,
+      });
     });
   });
 }
@@ -495,6 +586,59 @@ async function getNetworkInfo() {
     clients,
   };
 }
+
+// ---------- Camera API ----------
+app.get("/api/camera/status", async (req, res) => {
+  try {
+    const [libcameraInstalled, devices] = await Promise.all([
+      hasLibcameraBinary(),
+      Promise.resolve(listVideoDevices()),
+    ]);
+    const online = devices.length > 0;
+    res.json({
+      name: "Arducam 5MP IMX335 Low-Light",
+      sensor: "Sony STARVIS IMX335",
+      lens: "M12 wide-angle with IR-cut filter",
+      streamUrl: CAMERA_STREAM_URL || null,
+      maxStill: { width: 2592, height: 1944 },
+      defaultStill: { width: CAMERA_STILL_WIDTH, height: CAMERA_STILL_HEIGHT },
+      devices,
+      online,
+      libcameraInstalled,
+      notes: online
+        ? "Camera node present; live preview depends on your streaming command."
+        : "No /dev/video* nodes detected. Check ribbon cable and Pi 5 camera slot.",
+    });
+  } catch (err) {
+    console.error("Camera status error:", err.message);
+    res.status(500).json({ error: "Failed to read camera status" });
+  }
+});
+
+app.post("/api/camera/snapshot", async (req, res) => {
+  const width = Number.isFinite(parseInt(req.body?.width, 10))
+    ? parseInt(req.body.width, 10)
+    : CAMERA_STILL_WIDTH;
+  const height = Number.isFinite(parseInt(req.body?.height, 10))
+    ? parseInt(req.body.height, 10)
+    : CAMERA_STILL_HEIGHT;
+
+  try {
+    const libcameraInstalled = await hasLibcameraBinary();
+    if (!libcameraInstalled) {
+      return res.status(500).json({ error: "libcamera-still is not available on this system" });
+    }
+    const still = await captureStill(width, height);
+    res.json({
+      image: "data:image/jpeg;base64," + still.buffer.toString("base64"),
+      width: still.width,
+      height: still.height,
+    });
+  } catch (err) {
+    console.error("Camera snapshot error:", err.message);
+    res.status(500).json({ error: err.message || "Failed to capture still" });
+  }
+});
 
 // ---------- System stats API ----------
 app.get("/api/system-stats", (req, res) => {

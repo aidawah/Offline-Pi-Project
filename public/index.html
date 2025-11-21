@@ -16,6 +16,7 @@
       </div>
       <nav>
         <button class="nav-btn active" data-view="home">Home</button>
+        <button class="nav-btn" data-view="camera">Camera</button>
         <button class="nav-btn" data-view="map">Colorado Map</button>
         <button class="nav-btn" data-view="system">System</button>
         <button class="nav-btn" data-view="weather">Weather</button>
@@ -36,7 +37,8 @@
                 two clicks.
               </p>
               <div class="hero-actions">
-                <button class="cta" data-nav-target="system">Open system</button>
+                <button class="cta" data-nav-target="camera">Open camera</button>
+                <button class="cta ghost" data-nav-target="system">Open system</button>
                 <button class="cta ghost" data-nav-target="map">Open map</button>
                 <button class="link-btn" data-nav-target="network">Hotspot clients</button>
               </div>
@@ -51,7 +53,7 @@
                 </div>
                 <div class="meta-item">
                   <span class="meta-label">Views</span>
-                  <span class="meta-value">System · Map · Weather · Network</span>
+                  <span class="meta-value">Camera · System · Map · Weather · Network</span>
                 </div>
               </div>
             </div>
@@ -73,6 +75,7 @@
                 </li>
               </ol>
               <div class="hero-mini-grid">
+                <button class="mini-tile" data-nav-target="camera">Camera live view</button>
                 <button class="mini-tile" data-nav-target="system">System health</button>
                 <button class="mini-tile" data-nav-target="map">Colorado map</button>
                 <button class="mini-tile" data-nav-target="weather">Forecast</button>
@@ -82,6 +85,11 @@
           </div>
 
           <div class="home-feature-grid">
+            <div class="feature-card">
+              <div class="feature-title">Camera</div>
+              <p>Live view, snapshots, and IMX335 notes built for low light driving.</p>
+              <button class="map-btn subtle" data-nav-target="camera">Open camera view</button>
+            </div>
             <div class="feature-card">
               <div class="feature-title">System</div>
               <p>Watch CPU temp, load, memory, and fan speed without digging.</p>
@@ -101,6 +109,118 @@
               <div class="feature-title">Hotspot</div>
               <p>See who is connected on wlan0 and toggle Ethernet if needed.</p>
               <button class="map-btn subtle" data-nav-target="network">View networking</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- CAMERA VIEW -->
+      <section id="view-camera" class="view">
+        <div class="card camera-card">
+          <div class="camera-hero">
+            <div>
+              <div class="eyebrow">Arducam IMX335 · Low light</div>
+              <h1>Camera &amp; Live View</h1>
+              <p>
+                Run the Arducam 5MP IMX335 (Sony STARVIS) for live view streaming, stills, and
+                video on the Pi 5. Drivers are upstreamed via libcamera, so it works offline.
+              </p>
+              <div class="cam-chip-row">
+                <span class="cam-chip">2592x1944 stills</span>
+                <span class="cam-chip">M12 wide-angle + IR-cut</span>
+                <span class="cam-chip">libcamera ready</span>
+                <span class="cam-chip subtle">15-pin &amp; 15-to-22-pin ribbons included</span>
+              </div>
+            </div>
+            <div class="camera-status-card">
+              <div class="camera-status-title">Module status</div>
+              <div class="camera-status-row">
+                <span class="camera-status-dot" id="cameraStatusDot"></span>
+                <span id="cameraStatusText">Checking camera...</span>
+              </div>
+              <div class="camera-meta" id="cameraMeta">
+                Sony IMX335 STARVIS sensor, tuned for low-light campsites and driving.
+              </div>
+              <button class="map-btn subtle" id="cameraRefreshBtn">Refresh status</button>
+            </div>
+          </div>
+
+          <div class="camera-live-grid">
+            <div class="camera-live">
+              <div class="camera-live-header">
+                <div>
+                  <div class="camera-live-title">Live view</div>
+                  <div class="camera-live-sub" id="cameraLiveSub">
+                    Stream URL or last captured still will appear here.
+                  </div>
+                </div>
+                <div class="camera-live-actions">
+                  <button class="map-btn" id="openStreamBtn">Open stream</button>
+                  <button class="map-btn subtle" id="grabStillBtn">Grab still</button>
+                </div>
+              </div>
+              <div class="camera-live-frame">
+                <div class="camera-aspect">
+                  <img id="cameraLiveImg" alt="Camera live view" />
+                </div>
+                <div class="camera-placeholder" id="cameraPlaceholder">
+                  Start <code>libcamera-vid</code> (MJPEG/RTSP/HTTP) and set <code>CAMERA_STREAM_URL</code>,
+                  or click Grab still to verify wiring without a stream.
+                </div>
+              </div>
+            </div>
+
+            <div class="camera-side">
+              <div class="cam-control-card">
+                <div class="cam-control-title">Quick still capture</div>
+                <div class="cam-control-grid">
+                  <label class="cam-field">
+                    <span>Width</span>
+                    <input
+                      class="map-input"
+                      id="stillWidthInput"
+                      type="number"
+                      min="320"
+                      max="2592"
+                      step="1"
+                      inputmode="numeric"
+                    />
+                  </label>
+                  <label class="cam-field">
+                    <span>Height</span>
+                    <input
+                      class="map-input"
+                      id="stillHeightInput"
+                      type="number"
+                      min="240"
+                      max="1944"
+                      step="1"
+                      inputmode="numeric"
+                    />
+                  </label>
+                </div>
+                <div class="cam-buttons">
+                  <button class="map-btn" id="captureStillBtn">Capture still</button>
+                  <button class="map-btn subtle" id="downloadStillBtn" disabled>
+                    Download last still
+                  </button>
+                </div>
+                <div class="cam-note" id="cameraStillNote">
+                  Uses <code>libcamera-still</code>. Defaults to a mid-size JPEG if you don’t set numbers.
+                </div>
+              </div>
+
+              <div class="cam-facts-card">
+                <div class="cam-control-title">Module notes</div>
+                <ul class="cam-facts">
+                  <li>5MP Arducam with Sony STARVIS IMX335 sensor for low-light performance.</li>
+                  <li>Supports 2592x1944 stills; tuned for live streaming + photo/video capture.</li>
+                  <li>M12 wide-angle lens with IR-cut filter for clean daytime color.</li>
+                  <li>Pi 5 ready: 15-pin + 15-to-22-pin CSI ribbons included for the new connector.</li>
+                  <li>Fully compatible with libcamera; drivers already upstreamed.</li>
+                  <li>Intended for offline Pi-Control: hotspot live view, snapshots, and recordings.</li>
+                </ul>
+              </div>
             </div>
           </div>
         </div>
