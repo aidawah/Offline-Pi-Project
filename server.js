@@ -36,7 +36,7 @@ const MAP_TILE_FALLBACK_URL =
   "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"; // only used if local tiles fail
 const MAP_TILE_FALLBACK_ATTRIB =
   process.env.MAP_TILE_FALLBACK_ATTRIB || "(c) OpenStreetMap contributors";
-const CAMERA_STREAM_URL = process.env.CAMERA_STREAM_URL || "http://10.42.0.1:8554/stream.mjpg";
+const CAMERA_STREAM_URL = process.env.CAMERA_STREAM_URL || "/camera/stream";
 const CAMERA_STILL_WIDTH = Number.isFinite(parseInt(process.env.CAMERA_STILL_WIDTH, 10))
   ? parseInt(process.env.CAMERA_STILL_WIDTH, 10)
   : 1600;
@@ -52,6 +52,8 @@ const CAMERA_PIPE_HEIGHT = Number.isFinite(parseInt(process.env.CAMERA_PIPE_HEIG
 const CAMERA_PIPE_FPS = Number.isFinite(parseInt(process.env.CAMERA_PIPE_FPS, 10))
   ? parseInt(process.env.CAMERA_PIPE_FPS, 10)
   : 20;
+const CAMERA_PIPE_CMD = process.env.CAMERA_PIPE_CMD || "rpicam-vid";
+const CAMERA_PIPE_FALLBACK_CMD = process.env.CAMERA_PIPE_FALLBACK_CMD || "libcamera-vid";
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
@@ -65,6 +67,9 @@ let weatherCache = {
 let lastHotspotHostLog = 0;
 let cameraPipe = null;
 const cameraClients = new Set();
+const cameraErrors = {
+  last: null,
+};
 
 // Expose minimal frontend config (tile source)
 app.get("/config.js", (req, res) => {
@@ -78,7 +83,7 @@ app.get("/config.js", (req, res) => {
       fallbackAttribution: MAP_TILE_FALLBACK_ATTRIB,
     },
     camera: {
-      streamUrl: CAMERA_STREAM_URL || null,
+      streamUrl: CAMERA_STREAM_URL || "/camera/stream",
       module: "Arducam 5MP IMX335 Low-Light (Sony STARVIS)",
       maxStill: {
         width: 2592,
@@ -619,7 +624,27 @@ function startCameraPipe() {
     "-",
   ];
 
-  const proc = spawn("rpicam-vid", args, { stdio: ["ignore", "pipe", "ignore"] });
+  const commands = [CAMERA_PIPE_CMD, CAMERA_PIPE_FALLBACK_CMD].filter(Boolean);
+  let proc = null;
+  let usedCmd = null;
+  let lastErr = null;
+
+  for (const cmd of commands) {
+    try {
+      proc = spawn(cmd, args, { stdio: ["ignore", "pipe", "pipe"] });
+      usedCmd = cmd;
+      break;
+    } catch (err) {
+      lastErr = err;
+    }
+  }
+
+  if (!proc) {
+    cameraErrors.last = lastErr || new Error("Failed to spawn camera pipe");
+    console.error("[camera] pipe spawn failed:", cameraErrors.last.message);
+    return null;
+  }
+
   const boundary = "ffserver";
   let buffer = Buffer.alloc(0);
 
@@ -634,7 +659,6 @@ function startCameraPipe() {
       }
       const end = buffer.indexOf(Buffer.from([0xff, 0xd9]), start + 2);
       if (end < 0) {
-        // wait for more data
         if (start > 0) buffer = buffer.slice(start);
         break;
       }
@@ -656,13 +680,38 @@ function startCameraPipe() {
     }
   });
 
-  proc.on("exit", () => {
+  proc.stderr.on("data", (d) => {
+    const msg = d.toString();
+    cameraErrors.last = new Error(msg.trim());
+  });
+
+  proc.on("error", (err) => {
+    cameraErrors.last = err;
+    console.error("[camera] pipe error:", err.message);
     cameraPipe = null;
-    cameraClients.forEach((res) => res.end());
+    cameraClients.forEach((res) => {
+      try {
+        res.end();
+      } catch (_) {}
+    });
     cameraClients.clear();
   });
 
-  cameraPipe = { proc, boundary };
+  proc.on("exit", (code, signal) => {
+    console.warn("[camera] pipe exited", { code, signal });
+    cameraPipe = null;
+    cameraClients.forEach((res) => {
+      try {
+        res.end();
+      } catch (_) {}
+    });
+    cameraClients.clear();
+  });
+
+  cameraPipe = { proc, boundary, cmd: usedCmd };
+  console.log(
+    `[camera] pipe started with ${usedCmd} at ${CAMERA_PIPE_WIDTH}x${CAMERA_PIPE_HEIGHT}@${CAMERA_PIPE_FPS}`
+  );
   return cameraPipe;
 }
 
