@@ -585,6 +585,57 @@ p {
 .cam-facts li::marker {
   color: var(--accent);
 }
+.cam-stills-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 0.4rem;
+}
+.cam-still-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.5rem;
+}
+.cam-still {
+  position: relative;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  border-radius: 0.6rem;
+  overflow: hidden;
+  background: #0b1224;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.35);
+}
+.cam-still img {
+  width: 100%;
+  display: block;
+}
+.cam-still-actions {
+  position: absolute;
+  inset: auto 0 0 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.25rem 0.4rem;
+  background: linear-gradient(180deg, transparent, rgba(0, 0, 0, 0.6));
+  font-size: 0.75rem;
+}
+.cam-still-actions a,
+.cam-still-actions button {
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  color: #e5e7eb;
+  border-radius: 0.35rem;
+  padding: 0.15rem 0.5rem;
+  cursor: pointer;
+  text-decoration: none;
+}
+.cam-still-actions button:hover,
+.cam-still-actions a:hover {
+  border-color: var(--accent);
+}
+.cam-empty {
+  margin-top: 0.4rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
 
 /* ---- SYSTEM MANAGEMENT ---- */
 .system-grid {

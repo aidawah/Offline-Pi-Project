@@ -119,15 +119,15 @@
         <div class="card camera-card">
           <div class="camera-hero">
             <div>
-              <div class="eyebrow">Arducam IMX335 · Low light</div>
+              <div class="eyebrow">Arducam IMX519 · 12MP</div>
               <h1>Camera &amp; Live View</h1>
               <p>
-                Run the Arducam 5MP IMX335 (Sony STARVIS) for live view streaming, stills, and
-                video on the Pi 5. Drivers are upstreamed via libcamera, so it works offline.
+                Run the Arducam 12MP IMX519 for live view streaming, stills, and video on the Pi 5.
+                Drivers are upstreamed via libcamera, so it works offline.
               </p>
               <div class="cam-chip-row">
-                <span class="cam-chip">2592x1944 stills</span>
-                <span class="cam-chip">M12 wide-angle + IR-cut</span>
+                <span class="cam-chip">4656x3496 stills</span>
+                <span class="cam-chip">Fixed-focus + IR-cut</span>
                 <span class="cam-chip">libcamera ready</span>
                 <span class="cam-chip subtle">15-pin &amp; 15-to-22-pin ribbons included</span>
               </div>
@@ -139,7 +139,7 @@
                 <span id="cameraStatusText">Checking camera...</span>
               </div>
               <div class="camera-meta" id="cameraMeta">
-                Sony IMX335 STARVIS sensor, tuned for low-light campsites and driving.
+                Sony IMX519 sensor, tuned for crisp daylight and solid low-light performance.
               </div>
               <button class="map-btn subtle" id="cameraRefreshBtn">Refresh status</button>
             </div>
@@ -181,9 +181,10 @@
                       id="stillWidthInput"
                       type="number"
                       min="320"
-                      max="2592"
+                      max="4656"
                       step="1"
                       inputmode="numeric"
+                      readonly
                     />
                   </label>
                   <label class="cam-field">
@@ -193,9 +194,10 @@
                       id="stillHeightInput"
                       type="number"
                       min="240"
-                      max="1944"
+                      max="3496"
                       step="1"
                       inputmode="numeric"
+                      readonly
                     />
                   </label>
                 </div>
@@ -206,16 +208,25 @@
                   </button>
                 </div>
                 <div class="cam-note" id="cameraStillNote">
-                  Uses <code>libcamera-still</code>. Defaults to a mid-size JPEG if you don’t set numbers.
+                  Uses <code>libcamera-still</code>. Size locked for consistent snapshots.
                 </div>
+              </div>
+
+              <div class="cam-facts-card">
+                <div class="cam-control-title">Saved stills</div>
+                <div class="cam-stills-actions">
+                  <button class="map-btn subtle" id="refreshStillsBtn">Refresh stills</button>
+                </div>
+                <div class="cam-still-grid" id="stillGrid"></div>
+                <div class="cam-empty" id="stillEmpty">No stills yet. Capture to save a JPG.</div>
               </div>
 
               <div class="cam-facts-card">
                 <div class="cam-control-title">Module notes</div>
                 <ul class="cam-facts">
-                  <li>5MP Arducam with Sony STARVIS IMX335 sensor for low-light performance.</li>
-                  <li>Supports 2592x1944 stills; tuned for live streaming + photo/video capture.</li>
-                  <li>M12 wide-angle lens with IR-cut filter for clean daytime color.</li>
+                  <li>12MP Arducam with Sony IMX519 sensor for sharp captures.</li>
+                  <li>Supports 4656x3496 stills; tuned for live streaming + photo/video capture.</li>
+                  <li>Fixed-focus module with IR-cut for clean color.</li>
                   <li>Pi 5 ready: 15-pin + 15-to-22-pin CSI ribbons included for the new connector.</li>
                   <li>Fully compatible with libcamera; drivers already upstreamed.</li>
                   <li>Intended for offline Pi-Control: hotspot live view, snapshots, and recordings.</li>

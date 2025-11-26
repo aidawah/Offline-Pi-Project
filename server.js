@@ -61,6 +61,9 @@ const CAMERA_MAX_STILL_W = Number.isFinite(parseInt(process.env.CAMERA_MAX_STILL
 const CAMERA_MAX_STILL_H = Number.isFinite(parseInt(process.env.CAMERA_MAX_STILL_H, 10))
   ? parseInt(process.env.CAMERA_MAX_STILL_H, 10)
   : 3496;
+const STILL_LOCK_W = CAMERA_STILL_WIDTH;
+const STILL_LOCK_H = CAMERA_STILL_HEIGHT;
+const STILL_DIR = path.join(__dirname, "public", "stills");
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
@@ -77,6 +80,17 @@ const cameraClients = new Set();
 const cameraErrors = {
   last: null,
 };
+
+function ensureStillDir() {
+  try {
+    if (!fs.existsSync(STILL_DIR)) {
+      fs.mkdirSync(STILL_DIR, { recursive: true });
+    }
+  } catch (err) {
+    console.error("Failed to create stills dir:", err.message);
+  }
+}
+ensureStillDir();
 
 // Expose minimal frontend config (tile source)
 app.get("/config.js", (req, res) => {
@@ -732,12 +746,12 @@ app.get("/api/camera/status", async (req, res) => {
     ]);
     const online = devices.length > 0;
     res.json({
-      name: "Arducam 5MP IMX335 Low-Light",
-      sensor: "Sony STARVIS IMX335",
-      lens: "M12 wide-angle with IR-cut filter",
+      name: "Arducam 12MP IMX519",
+      sensor: "Sony IMX519",
+      lens: "Fixed-focus with IR-cut filter",
       streamUrl: CAMERA_STREAM_URL || null,
-      maxStill: { width: 2592, height: 1944 },
-      defaultStill: { width: CAMERA_STILL_WIDTH, height: CAMERA_STILL_HEIGHT },
+      maxStill: { width: CAMERA_MAX_STILL_W, height: CAMERA_MAX_STILL_H },
+      defaultStill: { width: STILL_LOCK_W, height: STILL_LOCK_H },
       devices,
       online,
       libcameraInstalled,
@@ -752,27 +766,71 @@ app.get("/api/camera/status", async (req, res) => {
 });
 
 app.post("/api/camera/snapshot", async (req, res) => {
-  const width = Number.isFinite(parseInt(req.body?.width, 10))
-    ? parseInt(req.body.width, 10)
-    : CAMERA_STILL_WIDTH;
-  const height = Number.isFinite(parseInt(req.body?.height, 10))
-    ? parseInt(req.body.height, 10)
-    : CAMERA_STILL_HEIGHT;
+  res.status(410).json({ error: "Use /api/camera/stills to capture and save stills" });
+});
 
+app.get("/api/camera/stills", async (req, res) => {
+  try {
+    ensureStillDir();
+    const files = fs.readdirSync(STILL_DIR).filter((f) => /\.jpe?g$/i.test(f));
+    const entries = files.map((f) => {
+      const full = path.join(STILL_DIR, f);
+      const stat = fs.statSync(full);
+      return {
+        id: f,
+        url: "/stills/" + encodeURIComponent(f),
+        size: stat.size,
+        created: stat.mtimeMs,
+        width: STILL_LOCK_W,
+        height: STILL_LOCK_H,
+      };
+    });
+    entries.sort((a, b) => b.created - a.created);
+    res.json(entries);
+  } catch (err) {
+    console.error("Stills list error:", err.message);
+    res.status(500).json({ error: "Failed to list stills" });
+  }
+});
+
+app.post("/api/camera/stills", async (req, res) => {
   try {
     const libcameraInstalled = await hasLibcameraBinary();
     if (!libcameraInstalled) {
       return res.status(500).json({ error: "libcamera-still is not available on this system" });
     }
-    const still = await captureStill(width, height);
+    const still = await captureStill(STILL_LOCK_W, STILL_LOCK_H);
+    ensureStillDir();
+    const name = `still-${Date.now()}.jpg`;
+    const dest = path.join(STILL_DIR, name);
+    fs.writeFileSync(dest, still.buffer);
     res.json({
-      image: "data:image/jpeg;base64," + still.buffer.toString("base64"),
+      id: name,
+      url: "/stills/" + encodeURIComponent(name),
       width: still.width,
       height: still.height,
+      size: still.buffer.length,
     });
   } catch (err) {
-    console.error("Camera snapshot error:", err.message);
+    console.error("Camera still save error:", err.message);
     res.status(500).json({ error: err.message || "Failed to capture still" });
+  }
+});
+
+app.delete("/api/camera/stills/:id", (req, res) => {
+  const id = req.params.id;
+  if (!id || id.includes("..")) {
+    return res.status(400).json({ error: "Invalid id" });
+  }
+  try {
+    const dest = path.join(STILL_DIR, id);
+    if (fs.existsSync(dest)) {
+      fs.unlinkSync(dest);
+    }
+    res.json({ ok: true });
+  } catch (err) {
+    console.error("Still delete error:", err.message);
+    res.status(500).json({ error: "Failed to delete still" });
   }
 });
 
