@@ -43,6 +43,15 @@ const CAMERA_STILL_WIDTH = Number.isFinite(parseInt(process.env.CAMERA_STILL_WID
 const CAMERA_STILL_HEIGHT = Number.isFinite(parseInt(process.env.CAMERA_STILL_HEIGHT, 10))
   ? parseInt(process.env.CAMERA_STILL_HEIGHT, 10)
   : 900;
+const CAMERA_PIPE_WIDTH = Number.isFinite(parseInt(process.env.CAMERA_PIPE_WIDTH, 10))
+  ? parseInt(process.env.CAMERA_PIPE_WIDTH, 10)
+  : 1280;
+const CAMERA_PIPE_HEIGHT = Number.isFinite(parseInt(process.env.CAMERA_PIPE_HEIGHT, 10))
+  ? parseInt(process.env.CAMERA_PIPE_HEIGHT, 10)
+  : 720;
+const CAMERA_PIPE_FPS = Number.isFinite(parseInt(process.env.CAMERA_PIPE_FPS, 10))
+  ? parseInt(process.env.CAMERA_PIPE_FPS, 10)
+  : 20;
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
@@ -54,6 +63,8 @@ let weatherCache = {
   data: null,
 };
 let lastHotspotHostLog = 0;
+let cameraPipe = null;
+const cameraClients = new Set();
 
 // Expose minimal frontend config (tile source)
 app.get("/config.js", (req, res) => {
@@ -587,6 +598,74 @@ async function getNetworkInfo() {
   };
 }
 
+// ---------- Simple MJPEG pipe (libcamera-vid -> multipart/x-mixed-replace) ----------
+function startCameraPipe() {
+  if (cameraPipe) return cameraPipe;
+
+  const args = [
+    "--nopreview",
+    "--inline",
+    "--width",
+    String(CAMERA_PIPE_WIDTH),
+    "--height",
+    String(CAMERA_PIPE_HEIGHT),
+    "--framerate",
+    String(CAMERA_PIPE_FPS),
+    "--codec",
+    "mjpeg",
+    "-t",
+    "0",
+    "-o",
+    "-",
+  ];
+
+  const proc = spawn("rpicam-vid", args, { stdio: ["ignore", "pipe", "ignore"] });
+  const boundary = "ffserver";
+  let buffer = Buffer.alloc(0);
+
+  proc.stdout.on("data", (chunk) => {
+    buffer = Buffer.concat([buffer, chunk]);
+    // Find JPEG SOI/EOI markers and emit frames
+    while (true) {
+      const start = buffer.indexOf(Buffer.from([0xff, 0xd8]));
+      if (start < 0) {
+        buffer = Buffer.alloc(0);
+        break;
+      }
+      const end = buffer.indexOf(Buffer.from([0xff, 0xd9]), start + 2);
+      if (end < 0) {
+        // wait for more data
+        if (start > 0) buffer = buffer.slice(start);
+        break;
+      }
+      const frame = buffer.slice(start, end + 2);
+      buffer = buffer.slice(end + 2);
+      const header =
+        "--" +
+        boundary +
+        "\r\n" +
+        "Content-Type: image/jpeg\r\n" +
+        "Content-Length: " +
+        frame.length +
+        "\r\n\r\n";
+      cameraClients.forEach((res) => {
+        res.write(header);
+        res.write(frame);
+        res.write("\r\n");
+      });
+    }
+  });
+
+  proc.on("exit", () => {
+    cameraPipe = null;
+    cameraClients.forEach((res) => res.end());
+    cameraClients.clear();
+  });
+
+  cameraPipe = { proc, boundary };
+  return cameraPipe;
+}
+
 // ---------- Camera API ----------
 app.get("/api/camera/status", async (req, res) => {
   try {
@@ -638,6 +717,20 @@ app.post("/api/camera/snapshot", async (req, res) => {
     console.error("Camera snapshot error:", err.message);
     res.status(500).json({ error: err.message || "Failed to capture still" });
   }
+});
+
+// ---------- Camera stream proxy (multipart MJPEG) ----------
+app.get("/camera/stream", (req, res) => {
+  startCameraPipe();
+  res.writeHead(200, {
+    "Content-Type": "multipart/x-mixed-replace; boundary=ffserver",
+    "Cache-Control": "no-cache",
+    Pragma: "no-cache",
+  });
+  cameraClients.add(res);
+  req.on("close", () => {
+    cameraClients.delete(res);
+  });
 });
 
 // ---------- System stats API ----------

@@ -26,7 +26,7 @@ export function initCamera(isActive) {
   const cameraCfg = (window.PICO_CONFIG && window.PICO_CONFIG.camera) || {};
   const defaults = cameraCfg.snapshotDefault || {};
   const maxStill = cameraCfg.maxStill || { width: 2592, height: 1944 };
-  let streamUrl = cameraCfg.streamUrl || "";
+  let streamUrl = cameraCfg.streamUrl || "/camera/stream";
   let lastStill = null;
   let lastStillTs = null;
 
