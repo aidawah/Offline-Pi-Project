@@ -54,6 +54,13 @@ const CAMERA_PIPE_FPS = Number.isFinite(parseInt(process.env.CAMERA_PIPE_FPS, 10
   : 20;
 const CAMERA_PIPE_CMD = process.env.CAMERA_PIPE_CMD || "rpicam-vid";
 const CAMERA_PIPE_FALLBACK_CMD = process.env.CAMERA_PIPE_FALLBACK_CMD || "libcamera-vid";
+const CAMERA_MODEL = process.env.CAMERA_MODEL || "Arducam IMX519";
+const CAMERA_MAX_STILL_W = Number.isFinite(parseInt(process.env.CAMERA_MAX_STILL_W, 10))
+  ? parseInt(process.env.CAMERA_MAX_STILL_W, 10)
+  : 4656;
+const CAMERA_MAX_STILL_H = Number.isFinite(parseInt(process.env.CAMERA_MAX_STILL_H, 10))
+  ? parseInt(process.env.CAMERA_MAX_STILL_H, 10)
+  : 3496;
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
@@ -84,10 +91,10 @@ app.get("/config.js", (req, res) => {
     },
     camera: {
       streamUrl: CAMERA_STREAM_URL || "/camera/stream",
-      module: "Arducam 5MP IMX335 Low-Light (Sony STARVIS)",
+      module: CAMERA_MODEL,
       maxStill: {
-        width: 2592,
-        height: 1944,
+        width: CAMERA_MAX_STILL_W,
+        height: CAMERA_MAX_STILL_H,
       },
       snapshotDefault: {
         width: CAMERA_STILL_WIDTH,
@@ -683,6 +690,7 @@ function startCameraPipe() {
   proc.stderr.on("data", (d) => {
     const msg = d.toString();
     cameraErrors.last = new Error(msg.trim());
+    console.error("[camera]", msg.trim());
   });
 
   proc.on("error", (err) => {
@@ -770,7 +778,12 @@ app.post("/api/camera/snapshot", async (req, res) => {
 
 // ---------- Camera stream proxy (multipart MJPEG) ----------
 app.get("/camera/stream", (req, res) => {
-  startCameraPipe();
+  const pipe = startCameraPipe();
+  if (!pipe) {
+    const msg = cameraErrors.last ? cameraErrors.last.message : "camera pipe not available";
+    console.error("[camera] failing stream request:", msg);
+    return res.status(500).send("Camera stream unavailable: " + msg);
+  }
   res.writeHead(200, {
     "Content-Type": "multipart/x-mixed-replace; boundary=ffserver",
     "Cache-Control": "no-cache",
