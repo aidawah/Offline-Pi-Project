@@ -41,14 +41,18 @@ export function initCamera(isActive) {
     }
   }
 
-  function setLiveImage(src) {
-    if (!liveImg || !src) return;
-    liveImg.src = src;
-    liveImg.style.display = "block";
+  function hidePlaceholder() {
     if (placeholder) {
       placeholder.classList.remove("visible");
       placeholder.style.display = "none";
     }
+  }
+
+  function setLiveImage(src) {
+    if (!liveImg || !src) return;
+    liveImg.src = src;
+    liveImg.style.display = "block";
+    hidePlaceholder();
   }
 
   function updateLiveSub() {
@@ -134,10 +138,14 @@ export function initCamera(isActive) {
       liveImg.src = streamUrl;
     }
     liveImg.style.display = "block";
-    if (placeholder) placeholder.classList.remove("visible");
+    hidePlaceholder();
   }
 
   if (liveImg) {
+    liveImg.addEventListener("load", () => {
+      hidePlaceholder();
+      updateLiveSub();
+    });
     liveImg.addEventListener("error", () => {
       setPlaceholder("Stream not reachable. Start libcamera-vid or verify the URL.");
     });
