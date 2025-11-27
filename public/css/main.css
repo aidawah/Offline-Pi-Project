@@ -715,60 +715,46 @@ p {
   color: var(--muted);
 }
 
-.cam-modal {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(4px);
-  display: none;
-  align-items: center;
-  justify-content: center;
-  padding: 1rem;
-  z-index: 30;
+.inventory-body {
+  background: radial-gradient(circle at 10% 10%, rgba(34, 211, 238, 0.04), rgba(5, 9, 12, 0.95));
+  min-height: 100vh;
 }
-.cam-modal.open {
-  display: flex;
+.inventory-shell {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 2rem;
 }
-.cam-modal-dialog {
-  background: #060b15;
-  border: 1px solid rgba(148, 163, 184, 0.25);
-  border-radius: 1rem;
-  padding: 1rem;
-  width: min(1100px, 96vw);
-  max-height: 90vh;
-  display: grid;
-  grid-template-rows: auto 1fr;
-  gap: 0.7rem;
-  box-shadow:
-    0 24px 60px rgba(0, 0, 0, 0.6),
-    0 0 0 1px rgba(255, 255, 255, 0.05);
-}
-.cam-modal-header {
+.inventory-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  gap: 0.8rem;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1rem;
 }
-.cam-modal-actions {
+.inventory-actions {
   display: flex;
-  gap: 0.4rem;
+  gap: 0.5rem;
   flex-wrap: wrap;
 }
-.cam-modal-body {
+.inventory-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.2fr) minmax(320px, 1fr);
-  gap: 0.9rem;
-  overflow: hidden;
+  grid-template-columns: minmax(0, 1.3fr) minmax(340px, 1fr);
+  gap: 1rem;
 }
-@media (max-width: 900px) {
-  .cam-modal-body {
+@media (max-width: 960px) {
+  .inventory-grid {
     grid-template-columns: minmax(0, 1fr);
   }
 }
-.cam-modal-grid {
-  min-height: 260px;
-  overflow: auto;
-  padding-right: 0.4rem;
+.inventory-left {
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  border-radius: 0.9rem;
+  background: #0a1020;
+  padding: 0.9rem;
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.45);
+}
+.inventory-right {
+  min-height: 320px;
 }
 
 /* ---- SYSTEM MANAGEMENT ---- */

@@ -227,10 +227,12 @@
               <div class="cam-facts-card">
                 <div class="cam-control-title">Saved stills</div>
                 <div class="cam-stills-actions">
-                  <button class="map-btn subtle" id="refreshStillsBtn">Refresh stills</button>
-                  <button class="map-btn" id="openCatalogBtn">Inventory</button>
+                  <button class="map-btn" id="openCatalogBtn">Open inventory</button>
                 </div>
-                <div class="cam-empty">Open Inventory to browse, rename, download, or delete stills.</div>
+                <div class="cam-empty">
+                  Open the inventory page to browse, rename, download, or delete stills without crowding
+                  the camera view.
+                </div>
               </div>
 
               <div class="cam-facts-card">
@@ -248,44 +250,6 @@
           </div>
         </div>
       </section>
-
-      <!-- STILL INVENTORY MODAL -->
-      <div class="cam-modal" id="catalogModal" aria-hidden="true">
-        <div class="cam-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="catalogTitle">
-          <div class="cam-modal-header">
-            <div>
-              <div class="eyebrow">Saved stills</div>
-              <h2 id="catalogTitle">Inventory</h2>
-            </div>
-            <div class="cam-modal-actions">
-              <button class="map-btn subtle" id="refreshStillsBtnModal">Refresh</button>
-              <button class="map-btn" id="closeCatalogBtn">Close</button>
-            </div>
-          </div>
-          <div class="cam-modal-body">
-            <div class="cam-modal-grid">
-              <div class="cam-still-grid" id="stillGrid"></div>
-              <div class="cam-empty" id="stillEmpty">No stills yet. Capture to save a JPG.</div>
-            </div>
-            <div class="cam-selected" id="selectedStillCard">
-              <div class="cam-selected-preview">
-                <img id="selectedStillImg" alt="Selected still" />
-                <div class="cam-empty" id="selectedStillEmpty">Select a still to preview.</div>
-              </div>
-              <div class="cam-selected-info">
-                <div class="cam-selected-title" id="selectedStillTitle">No still selected</div>
-                <div class="cam-selected-meta" id="selectedStillMeta"></div>
-                <div class="cam-selected-actions">
-                  <button class="map-btn subtle" id="openStillBtn" disabled>Open full size</button>
-                  <button class="map-btn subtle" id="downloadSelectedBtn" disabled>Download</button>
-                  <button class="map-btn subtle" id="renameSelectedBtn" disabled>Rename</button>
-                  <button class="map-btn subtle danger" id="deleteSelectedBtn" disabled>Delete</button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
 
       <!-- COLORADO MAP VIEW -->
       <section id="view-map" class="view">

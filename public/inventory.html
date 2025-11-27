@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Stills Inventory</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="/css/main.css" />
+    <script src="/config.js"></script>
+  </head>
+  <body class="inventory-body">
+    <div class="inventory-shell">
+      <header class="inventory-header">
+        <div>
+          <div class="eyebrow">Camera stills</div>
+          <h1>Inventory</h1>
+          <p>Browse, rename, download, and delete saved stills without leaving live view.</p>
+        </div>
+        <div class="inventory-actions">
+          <button class="map-btn" id="refreshStillsBtn">Refresh</button>
+          <a class="map-btn subtle" href="/" id="backToCamera">Back to camera</a>
+        </div>
+      </header>
+
+      <div class="inventory-grid">
+        <div class="inventory-left">
+          <div class="cam-still-grid" id="stillGrid"></div>
+          <div class="cam-empty" id="stillEmpty">No stills yet. Capture one from the camera view.</div>
+        </div>
+        <div class="inventory-right cam-selected" id="selectedStillCard">
+          <div class="cam-selected-preview">
+            <img id="selectedStillImg" alt="Selected still" />
+            <div class="cam-empty" id="selectedStillEmpty">Select a still to preview.</div>
+          </div>
+          <div class="cam-selected-info">
+            <div class="cam-selected-title" id="selectedStillTitle">No still selected</div>
+            <div class="cam-selected-meta" id="selectedStillMeta"></div>
+            <div class="cam-selected-actions">
+              <button class="map-btn subtle" id="openStillBtn" disabled>Open full size</button>
+              <button class="map-btn subtle" id="downloadSelectedBtn" disabled>Download</button>
+              <button class="map-btn subtle" id="renameSelectedBtn" disabled>Rename</button>
+              <button class="map-btn subtle danger" id="deleteSelectedBtn" disabled>Delete</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script type="module" src="/js/inventory.js"></script>
+  </body>
+</html>
