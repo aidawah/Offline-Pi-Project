@@ -278,24 +278,26 @@ function captureStill(width, height) {
 }
 
 async function readDht() {
-  // Try node-dht-sensor first
-  if (dhtSensor && typeof dhtSensor.read === "function") {
-    const result = dhtSensor.read(DHT_TYPE, DHT_PIN);
-    if (
-      result &&
-      result.isValid !== false &&
-      typeof result.temperature === "number" &&
-      typeof result.humidity === "number" &&
-      result.temperature !== 0 &&
-      result.humidity !== 0
-    ) {
-      return {
-        tempC: result.temperature,
-        tempF: result.temperature * 1.8 + 32,
-        humidity: result.humidity,
-      };
+  // Try node-dht-sensor only if /dev/gpiomem exists
+  try {
+    if (fs.existsSync("/dev/gpiomem") && dhtSensor && typeof dhtSensor.read === "function") {
+      const result = dhtSensor.read(DHT_TYPE, DHT_PIN);
+      if (
+        result &&
+        result.isValid !== false &&
+        typeof result.temperature === "number" &&
+        typeof result.humidity === "number" &&
+        result.temperature !== 0 &&
+        result.humidity !== 0
+      ) {
+        return {
+          tempC: result.temperature,
+          tempF: result.temperature * 1.8 + 32,
+          humidity: result.humidity,
+        };
+      }
     }
-  }
+  } catch (_) {}
 
   // Fallback to Python (adafruit_dht with libgpiod)
   return new Promise((resolve, reject) => {
