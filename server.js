@@ -75,6 +75,7 @@ try {
   // Optional dep; allow app to run if missing
   dhtSensor = require("node-dht-sensor");
 } catch (_) {}
+const PY_DHT_SCRIPT = path.join(__dirname, "scripts", "read_dht.py");
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
@@ -277,18 +278,48 @@ function captureStill(width, height) {
 }
 
 async function readDht() {
-  if (!dhtSensor || typeof dhtSensor.read !== "function") {
-    throw new Error("node-dht-sensor not available");
+  // Try node-dht-sensor first
+  if (dhtSensor && typeof dhtSensor.read === "function") {
+    const result = dhtSensor.read(DHT_TYPE, DHT_PIN);
+    if (
+      result &&
+      result.isValid !== false &&
+      typeof result.temperature === "number" &&
+      typeof result.humidity === "number" &&
+      result.temperature !== 0 &&
+      result.humidity !== 0
+    ) {
+      return {
+        tempC: result.temperature,
+        tempF: result.temperature * 1.8 + 32,
+        humidity: result.humidity,
+      };
+    }
   }
-  const result = dhtSensor.read(DHT_TYPE, DHT_PIN);
-  if (!result || typeof result.temperature !== "number" || typeof result.humidity !== "number") {
-    throw new Error("DHT read failed");
-  }
-  return {
-    tempC: result.temperature,
-    tempF: result.temperature * 1.8 + 32,
-    humidity: result.humidity,
-  };
+
+  // Fallback to Python (adafruit_dht with libgpiod)
+  return new Promise((resolve, reject) => {
+    exec(
+      `python3 ${PY_DHT_SCRIPT} ${DHT_TYPE} ${DHT_PIN}`,
+      { timeout: 5000, encoding: "utf8" },
+      (err, stdout) => {
+        if (err) return reject(err);
+        try {
+          const parsed = JSON.parse(stdout.trim());
+          if (parsed && !parsed.error && typeof parsed.tempC === "number") {
+            return resolve({
+              tempC: parsed.tempC,
+              tempF: parsed.tempF,
+              humidity: parsed.humidity,
+            });
+          }
+          return reject(new Error(parsed.error || "DHT read failed"));
+        } catch (e) {
+          return reject(e);
+        }
+      }
+    );
+  });
 }
 
 function execPromise(cmd) {
