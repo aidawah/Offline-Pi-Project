@@ -260,25 +260,46 @@ function listVideoDevices() {
 }
 
 async function hasLibcameraBinary() {
-  const knownPaths = ["/usr/bin/libcamera-still", "/usr/local/bin/libcamera-still"];
-  if (knownPaths.some((p) => fs.existsSync(p))) return true;
-  try {
-    const out = await runCmd("command -v libcamera-still");
-    return !!out.trim();
-  } catch (_) {
-    return false;
+  return !!resolveStillBinary();
+}
+
+function resolveStillBinary() {
+  const candidates = [
+    { path: "/usr/bin/libcamera-still", type: "libcamera" },
+    { path: "/usr/local/bin/libcamera-still", type: "libcamera" },
+    { path: "/usr/bin/rpicam-still", type: "rpicam" },
+    { path: "/usr/local/bin/rpicam-still", type: "rpicam" },
+  ];
+  for (const c of candidates) {
+    if (fs.existsSync(c.path)) return c;
   }
+  const names = [
+    { name: "libcamera-still", type: "libcamera" },
+    { name: "rpicam-still", type: "rpicam" },
+  ];
+  for (const entry of names) {
+    try {
+      const out = execSync(`command -v ${entry.name}`, { encoding: "utf8" }).trim();
+      if (out) return { path: out, type: entry.type };
+    } catch (_) {}
+  }
+  return null;
 }
 
 function captureStill(width, height) {
   return new Promise((resolve, reject) => {
+    const bin = resolveStillBinary();
+    if (!bin) {
+      return reject(
+        new Error("Camera capture binary not available (install libcamera-still or rpicam-still)")
+      );
+    }
     const w = Math.max(320, Math.min(Number(width) || CAMERA_STILL_WIDTH, CAMERA_MAX_STILL_W));
     const h = Math.max(240, Math.min(Number(height) || CAMERA_STILL_HEIGHT, CAMERA_MAX_STILL_H));
     const args = [
       "-n",
       "-t",
       "1",
-      "--immediate",
       "--width",
       String(w),
       "--height",
@@ -286,8 +307,11 @@ function captureStill(width, height) {
       "-o",
       "-",
     ];
+    if (bin.type === "libcamera") {
+      args.splice(4, 0, "--immediate");
+    }
 
-    const child = spawn("libcamera-still", args, { stdio: ["ignore", "pipe", "pipe"] });
+    const child = spawn(bin.path, args, { stdio: ["ignore", "pipe", "pipe"] });
     const chunks = [];
     let stderr = "";
     const timeout = setTimeout(() => {
@@ -306,7 +330,9 @@ function captureStill(width, height) {
     child.on("close", (code) => {
       clearTimeout(timeout);
       if (code !== 0) {
-        return reject(new Error(stderr.trim() || "libcamera-still failed"));
+        return reject(
+          new Error(stderr.trim() || `${bin.type === "libcamera" ? "libcamera-still" : "rpicam-still"} failed`)
+        );
       }
       if (!chunks.length) {
         return reject(new Error("No image returned from camera"));
@@ -903,7 +929,9 @@ app.post("/api/camera/stills", async (req, res) => {
   try {
     const libcameraInstalled = await hasLibcameraBinary();
     if (!libcameraInstalled) {
-      return res.status(500).json({ error: "libcamera-still is not available on this system" });
+      return res
+        .status(500)
+        .json({ error: "Camera capture binary not available (install libcamera-still or rpicam-still)" });
     }
     const still = await captureStill(STILL_LOCK_W, STILL_LOCK_H);
     ensureStillDir();
