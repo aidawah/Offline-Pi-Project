@@ -112,6 +112,21 @@ export function initCamera(isActive) {
     return savedStills.find((s) => s.id === selectedStillId) || null;
   }
 
+  function friendlyCameraError(err) {
+    const msg = (err && err.message ? String(err.message) : "") || "";
+    const lower = msg.toLowerCase();
+    if (lower.includes("device or resource busy") || lower.includes("pipeline handler in use")) {
+      return "Camera is busy. Stop other camera apps (libcamera-vid/RTSP) and try again.";
+    }
+    if (lower.includes("not available")) {
+      return "Capture tool missing. Install libcamera-still or rpicam-still.";
+    }
+    if (!msg) return "Snapshot failed.";
+    const parts = msg.split("\n").map((p) => p.trim()).filter(Boolean);
+    const compact = parts.join(" ");
+    return compact.length > 220 ? compact.slice(0, 200).trim() + "…" : compact;
+  }
+
   function updateSelectedState() {
     const still = getSelectedStill();
     const hasStill = !!still;
@@ -264,13 +279,9 @@ export function initCamera(isActive) {
       await loadStills();
     } catch (err) {
       if (stillNote) {
-        stillNote.textContent = err && err.message ? err.message : "Failed to capture still.";
+        stillNote.textContent = friendlyCameraError(err);
       }
-      setPlaceholder(
-        err && err.message
-          ? err.message
-          : "Snapshot failed. Check cabling and libcamera-still availability."
-      );
+      setPlaceholder(friendlyCameraError(err));
     }
   }
 
