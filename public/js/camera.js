@@ -16,7 +16,6 @@ export function initCamera(isActive) {
   const openStreamBtn = document.getElementById("openStreamBtn");
   const grabStillBtn = document.getElementById("grabStillBtn");
   const captureStillBtn = document.getElementById("captureStillBtn");
-  const downloadStillBtn = document.getElementById("downloadStillBtn");
   const stillWidthInput = document.getElementById("stillWidthInput");
   const stillHeightInput = document.getElementById("stillHeightInput");
   const stillNameInput = document.getElementById("stillNameInput");
@@ -25,6 +24,14 @@ export function initCamera(isActive) {
   const stillGrid = document.getElementById("stillGrid");
   const stillEmpty = document.getElementById("stillEmpty");
   const refreshStillsBtn = document.getElementById("refreshStillsBtn");
+  const selectedStillImg = document.getElementById("selectedStillImg");
+  const selectedStillEmpty = document.getElementById("selectedStillEmpty");
+  const selectedStillTitle = document.getElementById("selectedStillTitle");
+  const selectedStillMeta = document.getElementById("selectedStillMeta");
+  const openStillBtn = document.getElementById("openStillBtn");
+  const downloadSelectedBtn = document.getElementById("downloadSelectedBtn");
+  const renameSelectedBtn = document.getElementById("renameSelectedBtn");
+  const deleteSelectedBtn = document.getElementById("deleteSelectedBtn");
   const isViewActive = typeof isActive === "function" ? isActive : () => true;
 
   const cameraCfg = (window.PICO_CONFIG && window.PICO_CONFIG.camera) || {};
@@ -34,8 +41,9 @@ export function initCamera(isActive) {
   const lockedHeight = defaults.height || 900;
   let streamUrl = cameraCfg.streamUrl || "/camera/stream";
   let lastStill = null;
-  let lastStillTs = null;
   let savedStills = [];
+  let selectedStillId = null;
+  let pendingSelectId = null;
 
   function setPlaceholder(message) {
     if (placeholder) {
@@ -71,16 +79,85 @@ export function initCamera(isActive) {
     }
   }
 
-  function updateDownloadState() {
-    if (downloadStillBtn) {
-      downloadStillBtn.disabled = !lastStill;
-    }
-  }
-
   function describeDevices(devices) {
     if (!devices || !devices.length) return "No /dev/video* nodes detected.";
     if (devices.length === 1) return "Detected " + devices[0];
     return "Detected " + devices.join(", ");
+  }
+
+  function formatBytes(bytes) {
+    if (!Number.isFinite(bytes)) return "";
+    if (bytes < 1024) return bytes + " B";
+    const units = ["KB", "MB", "GB"];
+    let val = bytes / 1024;
+    let idx = 0;
+    while (val >= 1024 && idx < units.length - 1) {
+      val /= 1024;
+      idx += 1;
+    }
+    const places = val >= 10 ? 0 : 1;
+    return val.toFixed(places) + " " + units[idx];
+  }
+
+  function formatDate(ts) {
+    if (!Number.isFinite(ts)) return "";
+    try {
+      return new Date(ts).toLocaleString();
+    } catch (_) {
+      return "";
+    }
+  }
+
+  function getSelectedStill() {
+    return savedStills.find((s) => s.id === selectedStillId) || null;
+  }
+
+  function updateSelectedState() {
+    const still = getSelectedStill();
+    const hasStill = !!still;
+
+    if (selectedStillImg) {
+      if (hasStill) {
+        const cacheBust = still.created ? `${still.url.includes("?") ? "&" : "?"}ts=${Math.round(still.created)}` : "";
+        selectedStillImg.src = still.url + cacheBust;
+        selectedStillImg.style.display = "block";
+      } else {
+        selectedStillImg.removeAttribute("src");
+        selectedStillImg.style.display = "none";
+      }
+    }
+    if (selectedStillEmpty) {
+      selectedStillEmpty.style.display = hasStill ? "none" : "block";
+    }
+    if (selectedStillTitle) {
+      selectedStillTitle.textContent = hasStill ? still.name || still.id : "No still selected";
+    }
+    if (selectedStillMeta) {
+      if (hasStill) {
+        const metaParts = [formatDate(still.created), formatBytes(still.size)].filter(Boolean);
+        selectedStillMeta.textContent = metaParts.length ? metaParts.join(" · ") : "Saved still";
+      } else {
+        selectedStillMeta.textContent = "Pick a saved still from the catalog.";
+      }
+    }
+
+    [openStillBtn, downloadSelectedBtn, renameSelectedBtn, deleteSelectedBtn].forEach((btn) => {
+      if (btn) btn.disabled = !hasStill;
+    });
+  }
+
+  function markSelection() {
+    if (!stillGrid) return;
+    const cards = stillGrid.querySelectorAll("[data-still-id]");
+    cards.forEach((card) => {
+      card.classList.toggle("selected", card.dataset.stillId === selectedStillId);
+    });
+  }
+
+  function setSelectedStill(id) {
+    selectedStillId = id || null;
+    updateSelectedState();
+    markSelection();
   }
 
   async function refreshStatus() {
@@ -175,9 +252,8 @@ export function initCamera(isActive) {
         throw new Error((data && data.error) || "Snapshot failed");
       }
       lastStill = data.url;
-      lastStillTs = Date.now();
       setLiveImage(data.url);
-      updateDownloadState();
+      pendingSelectId = data.id;
       if (stillNote) {
         stillNote.textContent = "Captured and saved " + (data.width || lockedWidth) + "x" + (data.height || lockedHeight) + " JPEG.";
       }
@@ -190,19 +266,12 @@ export function initCamera(isActive) {
       if (stillNote) {
         stillNote.textContent = err && err.message ? err.message : "Failed to capture still.";
       }
-      setPlaceholder("Snapshot failed. Check cabling and libcamera-still availability.");
+      setPlaceholder(
+        err && err.message
+          ? err.message
+          : "Snapshot failed. Check cabling and libcamera-still availability."
+      );
     }
-  }
-
-  function downloadStill() {
-    if (!lastStill) return;
-    const a = document.createElement("a");
-    const ts = lastStillTs ? new Date(lastStillTs).toISOString().replace(/[:.]/g, "-") : "latest";
-    a.href = lastStill;
-    a.download = "camera-" + ts + ".jpg";
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
   }
 
   function setDefaults() {
@@ -212,30 +281,52 @@ export function initCamera(isActive) {
     if (stillHeightInput) {
       stillHeightInput.value = lockedHeight;
     }
-    updateDownloadState();
     updateLiveSub();
   }
 
-  async function renameStill(id, current) {
-    const next = prompt("New name", current || "");
+  async function renameSelected() {
+    const still = getSelectedStill();
+    if (!still) return;
+    const next = prompt("New name", still.name || still.id);
     if (next == null) return;
     try {
-      await fetch("/api/camera/stills/" + encodeURIComponent(id), {
+      await fetch("/api/camera/stills/" + encodeURIComponent(still.id), {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: next.trim() }),
       });
+      pendingSelectId = still.id;
       await loadStills();
     } catch (_) {}
   }
 
-  async function favoriteStill(id, value) {
+  function openSelected() {
+    const still = getSelectedStill();
+    if (!still) return;
+    window.open(still.url, "_blank", "noopener,noreferrer");
+  }
+
+  function downloadSelected() {
+    const still = getSelectedStill();
+    if (!still) return;
+    const ts = still.created ? new Date(still.created).toISOString().replace(/[:.]/g, "-") : "latest";
+    const safeName = (still.name || "camera").replace(/[^a-z0-9-_]+/gi, "_") || "camera";
+    const a = document.createElement("a");
+    a.href = still.url;
+    a.download = safeName + "-" + ts + ".jpg";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  }
+
+  async function deleteSelected() {
+    const still = getSelectedStill();
+    if (!still) return;
+    const ok = confirm("Delete " + (still.name || still.id) + "?");
+    if (!ok) return;
     try {
-      await fetch("/api/camera/stills/" + encodeURIComponent(id), {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ favorite: value }),
-      });
+      await fetch("/api/camera/stills/" + encodeURIComponent(still.id), { method: "DELETE" });
+      selectedStillId = null;
       await loadStills();
     } catch (_) {}
   }
@@ -251,12 +342,16 @@ export function initCamera(isActive) {
       savedStills = Array.isArray(data) ? data : [];
       if (!savedStills.length) {
         stillEmpty.textContent = "No stills yet. Capture to save a JPG.";
+        setSelectedStill(null);
         return;
       }
       stillEmpty.style.display = "none";
+      const currentSelection = selectedStillId;
       savedStills.forEach((item) => {
         const wrap = document.createElement("div");
         wrap.className = "cam-still";
+        wrap.dataset.stillId = item.id;
+        wrap.tabIndex = 0;
         const img = document.createElement("img");
         img.src = item.url;
         img.alt = item.id;
@@ -267,39 +362,36 @@ export function initCamera(isActive) {
         title.textContent = item.name || item.id;
         wrap.appendChild(title);
 
-        const actions = document.createElement("div");
-        actions.className = "cam-still-actions";
-        const view = document.createElement("a");
-        view.href = item.url;
-        view.target = "_blank";
-        view.rel = "noopener";
-        view.textContent = "View";
-        const fav = document.createElement("button");
-        fav.textContent = item.favorite ? "★" : "☆";
-        fav.title = item.favorite ? "Unfavorite" : "Favorite";
-        fav.addEventListener("click", () => favoriteStill(item.id, !item.favorite));
-        const rename = document.createElement("button");
-        rename.textContent = "Rename";
-        rename.addEventListener("click", () => renameStill(item.id, item.name));
-        const del = document.createElement("button");
-        del.textContent = "Delete";
-        del.addEventListener("click", async () => {
-          try {
-            await fetch("/api/camera/stills/" + encodeURIComponent(item.id), { method: "DELETE" });
-            await loadStills();
-          } catch (_) {}
+        const meta = document.createElement("div");
+        meta.className = "cam-still-meta";
+        const metaParts = [formatDate(item.created), formatBytes(item.size)].filter(Boolean);
+        meta.textContent = metaParts.length ? metaParts.join(" · ") : "Saved still";
+        wrap.appendChild(meta);
+
+        wrap.addEventListener("click", () => setSelectedStill(item.id));
+        wrap.addEventListener("keydown", (e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            setSelectedStill(item.id);
+          }
         });
-        actions.appendChild(view);
-        actions.appendChild(rename);
-        actions.appendChild(fav);
-        actions.appendChild(del);
-        wrap.appendChild(actions);
 
         stillGrid.appendChild(wrap);
       });
+      let nextSelection = null;
+      if (pendingSelectId && savedStills.some((s) => s.id === pendingSelectId)) {
+        nextSelection = pendingSelectId;
+      } else if (currentSelection && savedStills.some((s) => s.id === currentSelection)) {
+        nextSelection = currentSelection;
+      } else if (savedStills.length) {
+        nextSelection = savedStills[0].id;
+      }
+      pendingSelectId = null;
+      setSelectedStill(nextSelection);
     } catch (err) {
       stillEmpty.style.display = "block";
       stillEmpty.textContent = err.message || "Failed to load stills.";
+      setSelectedStill(null);
     }
   }
 
@@ -319,17 +411,27 @@ export function initCamera(isActive) {
   if (captureStillBtn) {
     captureStillBtn.addEventListener("click", captureStill);
   }
-  if (downloadStillBtn) {
-    downloadStillBtn.addEventListener("click", downloadStill);
-  }
   if (refreshStatusBtn) {
     refreshStatusBtn.addEventListener("click", () => refreshStatus());
   }
   if (refreshStillsBtn) {
     refreshStillsBtn.addEventListener("click", () => loadStills());
   }
+  if (openStillBtn) {
+    openStillBtn.addEventListener("click", openSelected);
+  }
+  if (downloadSelectedBtn) {
+    downloadSelectedBtn.addEventListener("click", downloadSelected);
+  }
+  if (renameSelectedBtn) {
+    renameSelectedBtn.addEventListener("click", renameSelected);
+  }
+  if (deleteSelectedBtn) {
+    deleteSelectedBtn.addEventListener("click", deleteSelected);
+  }
 
   setDefaults();
+  updateSelectedState();
   refreshStatus();
   loadStills();
 

@@ -243,9 +243,6 @@
                 </div>
                 <div class="cam-buttons">
                   <button class="map-btn" id="captureStillBtn">Capture still</button>
-                  <button class="map-btn subtle" id="downloadStillBtn" disabled>
-                    Download last still
-                  </button>
                 </div>
                 <div class="cam-note" id="cameraStillNote">
                   Uses <code>libcamera-still</code>. Size locked for consistent snapshots.
@@ -256,6 +253,22 @@
                 <div class="cam-control-title">Saved stills</div>
                 <div class="cam-stills-actions">
                   <button class="map-btn subtle" id="refreshStillsBtn">Refresh stills</button>
+                </div>
+                <div class="cam-selected" id="selectedStillCard">
+                  <div class="cam-selected-preview">
+                    <img id="selectedStillImg" alt="Selected still" />
+                    <div class="cam-empty" id="selectedStillEmpty">Select a still to preview.</div>
+                  </div>
+                  <div class="cam-selected-info">
+                    <div class="cam-selected-title" id="selectedStillTitle">No still selected</div>
+                    <div class="cam-selected-meta" id="selectedStillMeta"></div>
+                    <div class="cam-selected-actions">
+                      <button class="map-btn subtle" id="openStillBtn" disabled>Open full size</button>
+                      <button class="map-btn subtle" id="downloadSelectedBtn" disabled>Download</button>
+                      <button class="map-btn subtle" id="renameSelectedBtn" disabled>Rename</button>
+                      <button class="map-btn subtle danger" id="deleteSelectedBtn" disabled>Delete</button>
+                    </div>
+                  </div>
                 </div>
                 <div class="cam-still-grid" id="stillGrid"></div>
                 <div class="cam-empty" id="stillEmpty">No stills yet. Capture to save a JPG.</div>

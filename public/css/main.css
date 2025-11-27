@@ -590,6 +590,61 @@ p {
   justify-content: flex-end;
   margin-bottom: 0.4rem;
 }
+.cam-selected {
+  display: grid;
+  grid-template-columns: minmax(0, 200px) minmax(0, 1fr);
+  gap: 0.75rem;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  border-radius: 0.75rem;
+  padding: 0.65rem;
+  background: radial-gradient(circle at 0% 0%, rgba(34, 211, 238, 0.05), transparent 55%),
+    #0b1224;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+}
+@media (max-width: 700px) {
+  .cam-selected {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.cam-selected-preview {
+  position: relative;
+  border-radius: 0.6rem;
+  overflow: hidden;
+  min-height: 140px;
+  background: rgba(255, 255, 255, 0.03);
+}
+.cam-selected-preview img {
+  display: none;
+  width: 100%;
+}
+#selectedStillEmpty {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  margin: 0;
+  text-align: center;
+  padding: 0.5rem;
+}
+.cam-selected-info {
+  display: grid;
+  gap: 0.35rem;
+  align-content: start;
+}
+.cam-selected-title {
+  font-weight: 700;
+  font-size: 1rem;
+  color: #e2e8f0;
+}
+.cam-selected-meta {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+.cam-selected-actions {
+  display: flex;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+}
 .cam-still-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
@@ -602,6 +657,8 @@ p {
   overflow: hidden;
   background: #0b1224;
   box-shadow: 0 8px 16px rgba(0, 0, 0, 0.35);
+  cursor: pointer;
+  transition: transform 120ms ease, border-color 120ms ease, box-shadow 120ms ease;
 }
 .cam-still img {
   width: 100%;
@@ -617,29 +674,25 @@ p {
   color: #e5e7eb;
   background: linear-gradient(180deg, rgba(0, 0, 0, 0.65), transparent);
 }
-.cam-still-actions {
+.cam-still-meta {
   position: absolute;
   inset: auto 0 0 0;
+  padding: 0.25rem 0.4rem;
+  font-size: 0.75rem;
+  color: #e5e7eb;
+  background: linear-gradient(180deg, transparent, rgba(0, 0, 0, 0.6));
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  padding: 0.25rem 0.4rem;
-  background: linear-gradient(180deg, transparent, rgba(0, 0, 0, 0.6));
-  font-size: 0.75rem;
+  gap: 0.35rem;
 }
-.cam-still-actions a,
-.cam-still-actions button {
-  background: rgba(0, 0, 0, 0.4);
-  border: 1px solid rgba(148, 163, 184, 0.3);
-  color: #e5e7eb;
-  border-radius: 0.35rem;
-  padding: 0.15rem 0.5rem;
-  cursor: pointer;
-  text-decoration: none;
+.cam-still:hover {
+  transform: translateY(-2px);
+  border-color: rgba(34, 211, 238, 0.8);
+  box-shadow: 0 12px 24px rgba(34, 211, 238, 0.16);
 }
-.cam-still-actions button:hover,
-.cam-still-actions a:hover {
-  border-color: var(--accent);
+.cam-still.selected {
+  border-color: rgba(34, 211, 238, 0.95);
+  box-shadow: 0 12px 28px rgba(34, 211, 238, 0.28);
 }
 .cam-empty {
   margin-top: 0.4rem;
@@ -1263,6 +1316,13 @@ p {
   --btn-border: rgba(148, 163, 184, 0.65);
   --btn-shadow: rgba(148, 163, 184, 0.2);
   color: var(--muted);
+}
+.map-btn.danger {
+  --btn-bg-1: rgba(239, 68, 68, 0.14);
+  --btn-bg-2: rgba(239, 68, 68, 0.1);
+  --btn-border: rgba(239, 68, 68, 0.8);
+  --btn-shadow: rgba(239, 68, 68, 0.2);
+  color: #fecdd3;
 }
 .map-layout {
   display: grid;
