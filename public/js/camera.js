@@ -14,6 +14,10 @@ export function initCamera(isActive) {
   const stillGrid = document.getElementById("stillGrid");
   const stillEmpty = document.getElementById("stillEmpty");
   const refreshStillsBtn = document.getElementById("refreshStillsBtn");
+  const refreshStillsBtnModal = document.getElementById("refreshStillsBtnModal");
+  const openCatalogBtn = document.getElementById("openCatalogBtn");
+  const closeCatalogBtn = document.getElementById("closeCatalogBtn");
+  const catalogModal = document.getElementById("catalogModal");
   const selectedStillImg = document.getElementById("selectedStillImg");
   const selectedStillEmpty = document.getElementById("selectedStillEmpty");
   const selectedStillTitle = document.getElementById("selectedStillTitle");
@@ -162,6 +166,19 @@ export function initCamera(isActive) {
     selectedStillId = id || null;
     updateSelectedState();
     markSelection();
+  }
+
+  function openCatalog() {
+    if (!catalogModal) return;
+    catalogModal.classList.add("open");
+    catalogModal.setAttribute("aria-hidden", "false");
+    loadStills();
+  }
+
+  function closeCatalog() {
+    if (!catalogModal) return;
+    catalogModal.classList.remove("open");
+    catalogModal.setAttribute("aria-hidden", "true");
   }
 
   async function refreshStatus() {
@@ -430,6 +447,25 @@ export function initCamera(isActive) {
   if (refreshStillsBtn) {
     refreshStillsBtn.addEventListener("click", () => loadStills());
   }
+  if (refreshStillsBtnModal) {
+    refreshStillsBtnModal.addEventListener("click", () => loadStills());
+  }
+  if (openCatalogBtn) {
+    openCatalogBtn.addEventListener("click", openCatalog);
+  }
+  if (closeCatalogBtn) {
+    closeCatalogBtn.addEventListener("click", closeCatalog);
+  }
+  if (catalogModal) {
+    catalogModal.addEventListener("click", (e) => {
+      if (e.target === catalogModal) closeCatalog();
+    });
+    window.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && catalogModal.classList.contains("open")) {
+        closeCatalog();
+      }
+    });
+  }
   if (openStillBtn) {
     openStillBtn.addEventListener("click", openSelected);
   }
@@ -446,7 +482,6 @@ export function initCamera(isActive) {
   setDefaults();
   updateSelectedState();
   refreshStatus();
-  loadStills();
 
   return {
     refresh() {
@@ -455,7 +490,6 @@ export function initCamera(isActive) {
       if (streamUrl) {
         attachStream(false);
       }
-      loadStills();
     },
   };
 }

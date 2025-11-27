@@ -596,21 +596,23 @@ p {
 }
 .cam-stills-actions {
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
+  gap: 0.4rem;
   margin-bottom: 0.4rem;
 }
 .cam-selected {
+.cam-selected {
   display: grid;
-  grid-template-columns: minmax(0, 200px) minmax(0, 1fr);
-  gap: 0.75rem;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  gap: 1rem;
   border: 1px solid rgba(148, 163, 184, 0.25);
   border-radius: 0.75rem;
-  padding: 0.65rem;
+  padding: 0.75rem;
   background: radial-gradient(circle at 0% 0%, rgba(34, 211, 238, 0.05), transparent 55%),
     #0b1224;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
 }
-@media (max-width: 700px) {
+@media (max-width: 900px) {
   .cam-selected {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -619,7 +621,7 @@ p {
   position: relative;
   border-radius: 0.6rem;
   overflow: hidden;
-  min-height: 140px;
+  min-height: 220px;
   background: rgba(255, 255, 255, 0.03);
 }
 .cam-selected-preview img {
@@ -650,19 +652,18 @@ p {
   color: var(--muted);
 }
 .cam-selected-actions {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   gap: 0.35rem;
-  flex-wrap: wrap;
 }
 .cam-selected-actions .map-btn {
-  padding: 0.45rem 0.7rem;
+  padding: 0.55rem 0.75rem;
   font-size: 0.82rem;
-  flex: 1 1 150px;
 }
 .cam-still-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  gap: 0.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 0.55rem;
 }
 .cam-still {
   position: relative;
@@ -712,6 +713,62 @@ p {
   margin-top: 0.4rem;
   font-size: 0.85rem;
   color: var(--muted);
+}
+
+.cam-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  z-index: 30;
+}
+.cam-modal.open {
+  display: flex;
+}
+.cam-modal-dialog {
+  background: #060b15;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  border-radius: 1rem;
+  padding: 1rem;
+  width: min(1100px, 96vw);
+  max-height: 90vh;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: 0.7rem;
+  box-shadow:
+    0 24px 60px rgba(0, 0, 0, 0.6),
+    0 0 0 1px rgba(255, 255, 255, 0.05);
+}
+.cam-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.8rem;
+}
+.cam-modal-actions {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+.cam-modal-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(320px, 1fr);
+  gap: 0.9rem;
+  overflow: hidden;
+}
+@media (max-width: 900px) {
+  .cam-modal-body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.cam-modal-grid {
+  min-height: 260px;
+  overflow: auto;
+  padding-right: 0.4rem;
 }
 
 /* ---- SYSTEM MANAGEMENT ---- */
