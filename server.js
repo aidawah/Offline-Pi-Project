@@ -1,5 +1,5 @@
 const express = require("express");
-const { exec, spawn } = require("child_process");
+const { exec, spawn, execSync } = require("child_process");
 const https = require("https");
 const http = require("http");
 const path = require("path");
@@ -130,26 +130,19 @@ function saveStillMeta(meta) {
 
 function readDiskUsage(mountPoint = "/") {
   try {
-    const stat = fs.statfsSync(mountPoint);
-    const total = stat.blocks * stat.bsize;
-    const free = stat.bfree * stat.bsize;
-    const used = total - free;
-    return { total, used, free };
-  } catch (err) {
-    // fallback to df -k /
-    try {
-      const out = execSync(`df -k ${mountPoint}`, { encoding: "utf8" });
-      const lines = out.trim().split("\n");
-      if (lines.length >= 2) {
-        const parts = lines[1].trim().split(/\s+/);
-        const totalKb = parseInt(parts[1], 10);
-        const usedKb = parseInt(parts[2], 10);
-        const freeKb = parseInt(parts[3], 10);
-        if (Number.isFinite(totalKb) && Number.isFinite(usedKb) && Number.isFinite(freeKb)) {
-          return { total: totalKb * 1024, used: usedKb * 1024, free: freeKb * 1024 };
-        }
+    const out = execSync(`df -k ${mountPoint}`, { encoding: "utf8" });
+    const lines = out.trim().split("\n");
+    if (lines.length >= 2) {
+      const parts = lines[1].trim().split(/\s+/);
+      const totalKb = parseInt(parts[1], 10);
+      const usedKb = parseInt(parts[2], 10);
+      const freeKb = parseInt(parts[3], 10);
+      if (Number.isFinite(totalKb) && Number.isFinite(usedKb) && Number.isFinite(freeKb)) {
+        return { total: totalKb * 1024, used: usedKb * 1024, free: freeKb * 1024 };
       }
-    } catch (_) {}
+    }
+  } catch (err) {
+    console.error("Disk usage read error:", err.message);
   }
   return null;
 }
