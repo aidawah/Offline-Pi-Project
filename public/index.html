@@ -205,6 +205,16 @@
                 <div class="cam-control-title">Quick still capture</div>
                 <div class="cam-control-grid">
                   <label class="cam-field">
+                    <span>Name</span>
+                    <input
+                      class="map-input"
+                      id="stillNameInput"
+                      type="text"
+                      maxlength="50"
+                      placeholder="Optional name"
+                    />
+                  </label>
+                  <label class="cam-field">
                     <span>Width</span>
                     <input
                       class="map-input"
@@ -434,6 +444,23 @@
                     <div id="mini-fan-sub">
                       If your fan exposes RPM, it will show up here.
                     </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- DISK -->
+              <div class="mini-panel">
+                <div class="mini-gauge">
+                  <div class="mini-gauge-circle">
+                    <div
+                      class="mini-gauge-arc"
+                      data-gauge="disk"
+                    ></div>
+                    <div class="mini-gauge-value" id="mini-disk">--%</div>
+                  </div>
+                  <div class="mini-gauge-text">
+                    <div class="mini-gauge-label">DISK</div>
+                    <div id="mini-disk-sub">Waiting...</div>
                   </div>
                 </div>
               </div>

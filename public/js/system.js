@@ -8,6 +8,7 @@ export function initSystem(isActive) {
     cpuLoad: document.querySelector('[data-gauge="cpu-load"]'),
     mem: document.querySelector('[data-gauge="mem"]'),
     fan: document.querySelector('[data-gauge="fan"]'),
+    disk: document.querySelector('[data-gauge="disk"]'),
   };
 
   const centerValueEl = document.getElementById("center-value");
@@ -18,6 +19,8 @@ export function initSystem(isActive) {
   const miniRamSub = document.getElementById("mini-ram-sub");
   const miniFanVal = document.getElementById("mini-fan");
   const miniFanSub = document.getElementById("mini-fan-sub");
+  const miniDiskVal = document.getElementById("mini-disk");
+  const miniDiskSub = document.getElementById("mini-disk-sub");
   const statusEl = document.getElementById("status");
 
   function setGauge(name, percent, accent) {
@@ -53,7 +56,7 @@ export function initSystem(isActive) {
       if (!res.ok) throw new Error("HTTP " + res.status);
       const d = await res.json();
 
-      const { cpuTempC, load, totalMem, usedMem, uptime, fanRpm } = d;
+      const { cpuTempC, load, totalMem, usedMem, uptime, fanRpm, disk } = d;
 
       if (cpuTempC != null) {
         const temp = cpuTempC;
@@ -118,6 +121,22 @@ export function initSystem(isActive) {
         miniFanSub.textContent = "No RPM sensor detected - this is normal on many fans.";
         miniFanVal.style.fontSize = "1.1rem";
         setGauge("fan", 0, "var(--muted)");
+      }
+
+      if (disk && typeof disk.total === "number" && typeof disk.used === "number") {
+        const pct = (disk.used / disk.total) * 100;
+        if (miniDiskVal) miniDiskVal.textContent = Math.round(pct) + "%";
+        if (miniDiskSub) {
+          miniDiskSub.textContent = formatBytes(disk.used) + " / " + formatBytes(disk.total);
+        }
+        let color = "var(--accent2)";
+        if (pct >= 90) color = "var(--accent-hot)";
+        else if (pct >= 75) color = "var(--accent-warn)";
+        setGauge("disk", pct, color);
+      } else {
+        if (miniDiskVal) miniDiskVal.textContent = "N/A";
+        if (miniDiskSub) miniDiskSub.textContent = "Disk info not available.";
+        setGauge("disk", 0, "var(--muted)");
       }
 
       statusEl.textContent = "";

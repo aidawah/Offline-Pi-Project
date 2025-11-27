@@ -607,6 +607,16 @@ p {
   width: 100%;
   display: block;
 }
+.cam-still-title {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  padding: 0.25rem 0.4rem;
+  font-size: 0.78rem;
+  color: #e5e7eb;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.65), transparent);
+}
 .cam-still-actions {
   position: absolute;
   inset: auto 0 0 0;

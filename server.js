@@ -64,6 +64,7 @@ const CAMERA_MAX_STILL_H = Number.isFinite(parseInt(process.env.CAMERA_MAX_STILL
 const STILL_LOCK_W = CAMERA_STILL_WIDTH;
 const STILL_LOCK_H = CAMERA_STILL_HEIGHT;
 const STILL_DIR = path.join(__dirname, "public", "stills");
+const STILL_META = path.join(STILL_DIR, "stills.json");
 const DHT_TYPE = Number.isFinite(parseInt(process.env.DHT_TYPE, 10))
   ? parseInt(process.env.DHT_TYPE, 10)
   : 11; // 11 for DHT11, 22 for DHT22
@@ -98,11 +99,60 @@ function ensureStillDir() {
     if (!fs.existsSync(STILL_DIR)) {
       fs.mkdirSync(STILL_DIR, { recursive: true });
     }
+    if (!fs.existsSync(STILL_META)) {
+      fs.writeFileSync(STILL_META, JSON.stringify({}), "utf8");
+    }
   } catch (err) {
     console.error("Failed to create stills dir:", err.message);
   }
 }
 ensureStillDir();
+
+function loadStillMeta() {
+  try {
+    if (fs.existsSync(STILL_META)) {
+      const txt = fs.readFileSync(STILL_META, "utf8");
+      return JSON.parse(txt || "{}") || {};
+    }
+  } catch (err) {
+    console.error("Still meta read error:", err.message);
+  }
+  return {};
+}
+
+function saveStillMeta(meta) {
+  try {
+    fs.writeFileSync(STILL_META, JSON.stringify(meta, null, 2), "utf8");
+  } catch (err) {
+    console.error("Still meta save error:", err.message);
+  }
+}
+
+function readDiskUsage(mountPoint = "/") {
+  try {
+    const stat = fs.statfsSync(mountPoint);
+    const total = stat.blocks * stat.bsize;
+    const free = stat.bfree * stat.bsize;
+    const used = total - free;
+    return { total, used, free };
+  } catch (err) {
+    // fallback to df -k /
+    try {
+      const out = execSync(`df -k ${mountPoint}`, { encoding: "utf8" });
+      const lines = out.trim().split("\n");
+      if (lines.length >= 2) {
+        const parts = lines[1].trim().split(/\s+/);
+        const totalKb = parseInt(parts[1], 10);
+        const usedKb = parseInt(parts[2], 10);
+        const freeKb = parseInt(parts[3], 10);
+        if (Number.isFinite(totalKb) && Number.isFinite(usedKb) && Number.isFinite(freeKb)) {
+          return { total: totalKb * 1024, used: usedKb * 1024, free: freeKb * 1024 };
+        }
+      }
+    } catch (_) {}
+  }
+  return null;
+}
 
 // Expose minimal frontend config (tile source)
 app.get("/config.js", (req, res) => {
@@ -831,10 +881,12 @@ app.post("/api/camera/snapshot", async (req, res) => {
 app.get("/api/camera/stills", async (req, res) => {
   try {
     ensureStillDir();
+    const meta = loadStillMeta();
     const files = fs.readdirSync(STILL_DIR).filter((f) => /\.jpe?g$/i.test(f));
     const entries = files.map((f) => {
       const full = path.join(STILL_DIR, f);
       const stat = fs.statSync(full);
+      const m = meta[f] || {};
       return {
         id: f,
         url: "/stills/" + encodeURIComponent(f),
@@ -842,6 +894,8 @@ app.get("/api/camera/stills", async (req, res) => {
         created: stat.mtimeMs,
         width: STILL_LOCK_W,
         height: STILL_LOCK_H,
+        name: m.name || f,
+        favorite: !!m.favorite,
       };
     });
     entries.sort((a, b) => b.created - a.created);
@@ -860,15 +914,23 @@ app.post("/api/camera/stills", async (req, res) => {
     }
     const still = await captureStill(STILL_LOCK_W, STILL_LOCK_H);
     ensureStillDir();
-    const name = `still-${Date.now()}.jpg`;
-    const dest = path.join(STILL_DIR, name);
+    const fileId = `still-${Date.now()}.jpg`;
+    const dest = path.join(STILL_DIR, fileId);
     fs.writeFileSync(dest, still.buffer);
+    const meta = loadStillMeta();
+    meta[fileId] = {
+      name: typeof req.body?.name === "string" && req.body.name.trim() ? req.body.name.trim() : fileId,
+      favorite: false,
+    };
+    saveStillMeta(meta);
     res.json({
-      id: name,
-      url: "/stills/" + encodeURIComponent(name),
+      id: fileId,
+      url: "/stills/" + encodeURIComponent(fileId),
       width: still.width,
       height: still.height,
       size: still.buffer.length,
+      name: meta[fileId].name,
+      favorite: false,
     });
   } catch (err) {
     console.error("Camera still save error:", err.message);
@@ -886,10 +948,44 @@ app.delete("/api/camera/stills/:id", (req, res) => {
     if (fs.existsSync(dest)) {
       fs.unlinkSync(dest);
     }
+    const meta = loadStillMeta();
+    if (meta[id]) {
+      delete meta[id];
+      saveStillMeta(meta);
+    }
     res.json({ ok: true });
   } catch (err) {
     console.error("Still delete error:", err.message);
     res.status(500).json({ error: "Failed to delete still" });
+  }
+});
+
+app.patch("/api/camera/stills/:id", (req, res) => {
+  const id = req.params.id;
+  if (!id || id.includes("..")) {
+    return res.status(400).json({ error: "Invalid id" });
+  }
+  const updates = {};
+  if (typeof req.body?.name === "string") {
+    updates.name = req.body.name.trim();
+  }
+  if (typeof req.body?.favorite === "boolean") {
+    updates.favorite = req.body.favorite;
+  }
+  if (!updates.name && typeof updates.favorite !== "boolean") {
+    return res.status(400).json({ error: "No updates provided" });
+  }
+  try {
+    const meta = loadStillMeta();
+    meta[id] = {
+      name: updates.name || meta[id]?.name || id,
+      favorite: typeof updates.favorite === "boolean" ? updates.favorite : meta[id]?.favorite || false,
+    };
+    saveStillMeta(meta);
+    res.json({ ok: true, id, name: meta[id].name, favorite: meta[id].favorite });
+  } catch (err) {
+    console.error("Still update error:", err.message);
+    res.status(500).json({ error: "Failed to update still metadata" });
   }
 });
 
@@ -939,6 +1035,7 @@ app.get("/api/system-stats", (req, res) => {
   const uptime = os.uptime();
   const fanRpm = readFanRpm();
   const cores = os.cpus() ? os.cpus().length : null;
+  const disk = readDiskUsage("/") || null;
 
   res.json({
     cpuTempC,
@@ -948,6 +1045,7 @@ app.get("/api/system-stats", (req, res) => {
     uptime,
     fanRpm,
     cores,
+    disk,
   });
 });
 

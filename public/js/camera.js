@@ -19,6 +19,7 @@ export function initCamera(isActive) {
   const downloadStillBtn = document.getElementById("downloadStillBtn");
   const stillWidthInput = document.getElementById("stillWidthInput");
   const stillHeightInput = document.getElementById("stillHeightInput");
+  const stillNameInput = document.getElementById("stillNameInput");
   const stillNote = document.getElementById("cameraStillNote");
   const refreshStatusBtn = document.getElementById("cameraRefreshBtn");
   const stillGrid = document.getElementById("stillGrid");
@@ -160,7 +161,15 @@ export function initCamera(isActive) {
   async function captureStill() {
     if (stillNote) stillNote.textContent = "Capturing still...";
     try {
-      const res = await fetch("/api/camera/stills", { method: "POST", headers: { "Content-Type": "application/json" } });
+      const body = {};
+      if (stillNameInput && stillNameInput.value.trim()) {
+        body.name = stillNameInput.value.trim();
+      }
+      const res = await fetch("/api/camera/stills", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
       const data = await res.json();
       if (!res.ok || !data.url) {
         throw new Error((data && data.error) || "Snapshot failed");
@@ -207,6 +216,30 @@ export function initCamera(isActive) {
     updateLiveSub();
   }
 
+  async function renameStill(id, current) {
+    const next = prompt("New name", current || "");
+    if (next == null) return;
+    try {
+      await fetch("/api/camera/stills/" + encodeURIComponent(id), {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: next.trim() }),
+      });
+      await loadStills();
+    } catch (_) {}
+  }
+
+  async function favoriteStill(id, value) {
+    try {
+      await fetch("/api/camera/stills/" + encodeURIComponent(id), {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ favorite: value }),
+      });
+      await loadStills();
+    } catch (_) {}
+  }
+
   async function loadStills() {
     if (!stillGrid || !stillEmpty) return;
     stillGrid.innerHTML = "";
@@ -229,6 +262,11 @@ export function initCamera(isActive) {
         img.alt = item.id;
         wrap.appendChild(img);
 
+        const title = document.createElement("div");
+        title.className = "cam-still-title";
+        title.textContent = item.name || item.id;
+        wrap.appendChild(title);
+
         const actions = document.createElement("div");
         actions.className = "cam-still-actions";
         const view = document.createElement("a");
@@ -236,6 +274,13 @@ export function initCamera(isActive) {
         view.target = "_blank";
         view.rel = "noopener";
         view.textContent = "View";
+        const fav = document.createElement("button");
+        fav.textContent = item.favorite ? "★" : "☆";
+        fav.title = item.favorite ? "Unfavorite" : "Favorite";
+        fav.addEventListener("click", () => favoriteStill(item.id, !item.favorite));
+        const rename = document.createElement("button");
+        rename.textContent = "Rename";
+        rename.addEventListener("click", () => renameStill(item.id, item.name));
         const del = document.createElement("button");
         del.textContent = "Delete";
         del.addEventListener("click", async () => {
@@ -245,6 +290,8 @@ export function initCamera(isActive) {
           } catch (_) {}
         });
         actions.appendChild(view);
+        actions.appendChild(rename);
+        actions.appendChild(fav);
         actions.appendChild(del);
         wrap.appendChild(actions);
 
