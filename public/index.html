@@ -17,6 +17,7 @@
       <nav>
         <button class="nav-btn active" data-view="home">Home</button>
         <button class="nav-btn" data-view="camera">Camera</button>
+        <button class="nav-btn" data-view="car-temp">Car Temp</button>
         <button class="nav-btn" data-view="map">Colorado Map</button>
         <button class="nav-btn" data-view="system">System</button>
         <button class="nav-btn" data-view="weather">Weather</button>
@@ -76,6 +77,7 @@
               </ol>
               <div class="hero-mini-grid">
                 <button class="mini-tile" data-nav-target="camera">Camera live view</button>
+                <button class="mini-tile" data-nav-target="car-temp">Car temp</button>
                 <button class="mini-tile" data-nav-target="system">System health</button>
                 <button class="mini-tile" data-nav-target="map">Colorado map</button>
                 <button class="mini-tile" data-nav-target="weather">Forecast</button>
@@ -87,8 +89,13 @@
           <div class="home-feature-grid">
             <div class="feature-card">
               <div class="feature-title">Camera</div>
-              <p>Live view, snapshots, and IMX335 notes built for low light driving.</p>
+              <p>Live view, snapshots, and IMX519 notes.</p>
               <button class="map-btn subtle" data-nav-target="camera">Open camera view</button>
+            </div>
+            <div class="feature-card">
+              <div class="feature-title">Car temp</div>
+              <p>Live DHT11 temperature and humidity from the Pi.</p>
+              <button class="map-btn subtle" data-nav-target="car-temp">Open car temp</button>
             </div>
             <div class="feature-card">
               <div class="feature-title">System</div>
@@ -111,6 +118,29 @@
               <button class="map-btn subtle" data-nav-target="network">View networking</button>
             </div>
           </div>
+        </div>
+      </section>
+
+      <!-- CAR TEMP VIEW -->
+      <section id="view-car-temp" class="view">
+        <div class="card">
+          <h1>Car Temperature &amp; Humidity</h1>
+          <p>Live DHT11 reading from the Pi (GPIO 4 by default). Celsius, Fahrenheit, and RH%.</p>
+          <div class="car-temp-grid">
+            <div class="car-temp-card">
+              <div class="car-temp-value" id="carTempC">--.-°C</div>
+              <div class="car-temp-sub">Temp (Celsius)</div>
+            </div>
+            <div class="car-temp-card">
+              <div class="car-temp-value" id="carTempF">--.-°F</div>
+              <div class="car-temp-sub">Temp (Fahrenheit)</div>
+            </div>
+            <div class="car-temp-card">
+              <div class="car-temp-value" id="carHum">--.-%</div>
+              <div class="car-temp-sub">Relative Humidity</div>
+            </div>
+          </div>
+          <div class="car-temp-meta" id="carTempMeta">Waiting for sensor...</div>
         </div>
       </section>
 

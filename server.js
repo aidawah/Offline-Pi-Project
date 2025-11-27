@@ -64,6 +64,17 @@ const CAMERA_MAX_STILL_H = Number.isFinite(parseInt(process.env.CAMERA_MAX_STILL
 const STILL_LOCK_W = CAMERA_STILL_WIDTH;
 const STILL_LOCK_H = CAMERA_STILL_HEIGHT;
 const STILL_DIR = path.join(__dirname, "public", "stills");
+const DHT_TYPE = Number.isFinite(parseInt(process.env.DHT_TYPE, 10))
+  ? parseInt(process.env.DHT_TYPE, 10)
+  : 11; // 11 for DHT11, 22 for DHT22
+const DHT_PIN = Number.isFinite(parseInt(process.env.DHT_PIN, 10))
+  ? parseInt(process.env.DHT_PIN, 10)
+  : 4;
+let dhtSensor = null;
+try {
+  // Optional dep; allow app to run if missing
+  dhtSensor = require("node-dht-sensor");
+} catch (_) {}
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
@@ -217,8 +228,8 @@ async function hasLibcameraBinary() {
 
 function captureStill(width, height) {
   return new Promise((resolve, reject) => {
-    const w = Math.max(320, Math.min(Number(width) || CAMERA_STILL_WIDTH, 2592));
-    const h = Math.max(240, Math.min(Number(height) || CAMERA_STILL_HEIGHT, 1944));
+    const w = Math.max(320, Math.min(Number(width) || CAMERA_STILL_WIDTH, CAMERA_MAX_STILL_W));
+    const h = Math.max(240, Math.min(Number(height) || CAMERA_STILL_HEIGHT, CAMERA_MAX_STILL_H));
     const args = [
       "-n",
       "-t",
@@ -263,6 +274,21 @@ function captureStill(width, height) {
       });
     });
   });
+}
+
+async function readDht() {
+  if (!dhtSensor || typeof dhtSensor.read !== "function") {
+    throw new Error("node-dht-sensor not available");
+  }
+  const result = dhtSensor.read(DHT_TYPE, DHT_PIN);
+  if (!result || typeof result.temperature !== "number" || typeof result.humidity !== "number") {
+    throw new Error("DHT read failed");
+  }
+  return {
+    tempC: result.temperature,
+    tempF: result.temperature * 1.8 + 32,
+    humidity: result.humidity,
+  };
 }
 
 function execPromise(cmd) {
@@ -831,6 +857,23 @@ app.delete("/api/camera/stills/:id", (req, res) => {
   } catch (err) {
     console.error("Still delete error:", err.message);
     res.status(500).json({ error: "Failed to delete still" });
+  }
+});
+
+// ---------- Car temp (DHT) ----------
+app.get("/api/car-temp", async (req, res) => {
+  try {
+    const reading = await readDht();
+    res.json({
+      tempC: reading.tempC,
+      tempF: reading.tempF,
+      humidity: reading.humidity,
+      type: DHT_TYPE,
+      pin: DHT_PIN,
+    });
+  } catch (err) {
+    console.error("DHT read error:", err.message);
+    res.status(500).json({ error: err.message || "Failed to read DHT sensor" });
   }
 });
 

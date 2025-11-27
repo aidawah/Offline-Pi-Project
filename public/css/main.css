@@ -1350,3 +1350,33 @@ code {
   border-radius: 0.25rem;
   font-size: 0.8rem;
 }
+
+/* Car temp */
+.car-temp-grid {
+  margin-top: 1rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.8rem;
+}
+.car-temp-card {
+  background: radial-gradient(circle at 20% 0, rgba(59, 130, 246, 0.12), rgba(5, 9, 12, 0.92));
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  border-radius: 0.9rem;
+  padding: 1rem;
+  box-shadow: 0 12px 26px rgba(0, 0, 0, 0.45);
+  text-align: center;
+}
+.car-temp-value {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #fff7ec;
+}
+.car-temp-sub {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+.car-temp-meta {
+  margin-top: 0.6rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+}

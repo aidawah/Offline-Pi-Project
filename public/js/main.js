@@ -4,10 +4,12 @@ import { initWeather } from "./weather.js";
 import { initSystem } from "./system.js";
 import { initNetwork } from "./network.js";
 import { initCamera } from "./camera.js";
+import { initCarTemp } from "./carTemp.js";
 
 const views = {
   home: document.getElementById("view-home"),
   camera: document.getElementById("view-camera"),
+  "car-temp": document.getElementById("view-car-temp"),
   map: document.getElementById("view-map"),
   system: document.getElementById("view-system"),
   weather: document.getElementById("view-weather"),
@@ -21,6 +23,7 @@ const weather = initWeather(() => nav.currentView === "weather");
 const system = initSystem(() => nav.currentView === "system");
 const network = initNetwork(() => nav.currentView === "network");
 const camera = initCamera(() => nav.currentView === "camera");
+const carTemp = initCarTemp(() => nav.currentView === "car-temp");
 
 function handleViewChange(view) {
   if (view === "map") {
@@ -33,6 +36,8 @@ function handleViewChange(view) {
     network.refresh();
   } else if (view === "camera") {
     camera.refresh();
+  } else if (view === "car-temp") {
+    carTemp.refresh();
   }
 }
 
@@ -41,3 +46,4 @@ weather.refresh();
 system.refresh();
 network.refresh();
 camera.refresh();
+carTemp.refresh();
