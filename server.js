@@ -93,6 +93,12 @@ const cameraClients = new Set();
 const cameraErrors = {
   last: null,
 };
+let lastStreamFrame = {
+  buffer: null,
+  ts: 0,
+  width: CAMERA_PIPE_WIDTH,
+  height: CAMERA_PIPE_HEIGHT,
+};
 
 function ensureStillDir() {
   try {
@@ -756,6 +762,24 @@ async function getNetworkInfo() {
 function startCameraPipe() {
   if (cameraPipe) return cameraPipe;
 
+  const closeCameraClients = () => {
+    cameraClients.forEach((res) => {
+      try {
+        res.end();
+      } catch (_) {}
+    });
+    cameraClients.clear();
+  };
+
+  const clearPipe = (label, extra = null) => {
+    if (label) {
+      const meta = extra ? { ...extra } : {};
+      console.warn("[camera] pipe closed:", label, meta);
+    }
+    cameraPipe = null;
+    closeCameraClients();
+  };
+
   const args = [
     "--nopreview",
     "--inline",
@@ -821,6 +845,12 @@ function startCameraPipe() {
         "Content-Length: " +
         frame.length +
         "\r\n\r\n";
+      lastStreamFrame = {
+        buffer: frame,
+        ts: Date.now(),
+        width: CAMERA_PIPE_WIDTH,
+        height: CAMERA_PIPE_HEIGHT,
+      };
       cameraClients.forEach((res) => {
         res.write(header);
         res.write(frame);
@@ -838,31 +868,61 @@ function startCameraPipe() {
   proc.on("error", (err) => {
     cameraErrors.last = err;
     console.error("[camera] pipe error:", err.message);
-    cameraPipe = null;
-    cameraClients.forEach((res) => {
-      try {
-        res.end();
-      } catch (_) {}
-    });
-    cameraClients.clear();
+    clearPipe("error", { message: err.message });
   });
 
   proc.on("exit", (code, signal) => {
-    console.warn("[camera] pipe exited", { code, signal });
-    cameraPipe = null;
-    cameraClients.forEach((res) => {
-      try {
-        res.end();
-      } catch (_) {}
-    });
-    cameraClients.clear();
+    clearPipe("exit", { code, signal });
   });
 
-  cameraPipe = { proc, boundary, cmd: usedCmd };
+  cameraPipe = { proc, boundary, cmd: usedCmd, closeCameraClients, clearPipe };
   console.log(
     `[camera] pipe started with ${usedCmd} at ${CAMERA_PIPE_WIDTH}x${CAMERA_PIPE_HEIGHT}@${CAMERA_PIPE_FPS}`
   );
   return cameraPipe;
+}
+
+async function stopCameraPipe(reason = "manual") {
+  if (!cameraPipe || !cameraPipe.proc) return false;
+  console.log("[camera] stopping pipe", { reason, cmd: cameraPipe.cmd });
+  const proc = cameraPipe.proc;
+  const done = new Promise((resolve) => {
+    const finalize = () => {
+      proc.off("exit", finalize);
+      proc.off("error", finalize);
+      resolve(true);
+    };
+    proc.once("exit", finalize);
+    proc.once("error", finalize);
+  });
+  try {
+    proc.kill("SIGTERM");
+  } catch (_) {}
+  setTimeout(() => {
+    try {
+      proc.kill("SIGKILL");
+    } catch (_) {}
+  }, 1500);
+  await done;
+  if (cameraPipe?.clearPipe) {
+    cameraPipe.clearPipe("stopped", { reason });
+  } else {
+    cameraPipe = null;
+  }
+  return true;
+}
+
+function getLatestStreamStill() {
+  if (lastStreamFrame.buffer) {
+    return {
+      buffer: Buffer.from(lastStreamFrame.buffer),
+      width: lastStreamFrame.width,
+      height: lastStreamFrame.height,
+      ts: lastStreamFrame.ts,
+      source: "stream",
+    };
+  }
+  return null;
 }
 
 // ---------- Camera API ----------
@@ -890,6 +950,20 @@ app.get("/api/camera/status", async (req, res) => {
   } catch (err) {
     console.error("Camera status error:", err.message);
     res.status(500).json({ error: "Failed to read camera status" });
+  }
+});
+
+app.post("/api/camera/restart-stream", async (req, res) => {
+  try {
+    await stopCameraPipe("api-restart");
+    const pipe = startCameraPipe();
+    if (!pipe) {
+      return res.status(500).json({ error: "Failed to start camera stream" });
+    }
+    res.json({ ok: true, cmd: pipe.cmd });
+  } catch (err) {
+    console.error("Camera restart error:", err.message);
+    res.status(500).json({ error: "Failed to restart camera stream" });
   }
 });
 
@@ -927,13 +1001,17 @@ app.get("/api/camera/stills", async (req, res) => {
 
 app.post("/api/camera/stills", async (req, res) => {
   try {
-    const libcameraInstalled = await hasLibcameraBinary();
-    if (!libcameraInstalled) {
-      return res
-        .status(500)
-        .json({ error: "Camera capture binary not available (install libcamera-still or rpicam-still)" });
+    let still = getLatestStreamStill();
+    if (!still) {
+      const libcameraInstalled = await hasLibcameraBinary();
+      if (!libcameraInstalled) {
+        return res.status(500).json({
+          error:
+            "Camera capture binary not available (install libcamera-still or rpicam-still) and no live stream frame to use.",
+        });
+      }
+      still = await captureStill(STILL_LOCK_W, STILL_LOCK_H);
     }
-    const still = await captureStill(STILL_LOCK_W, STILL_LOCK_H);
     ensureStillDir();
     const fileId = `still-${Date.now()}.jpg`;
     const dest = path.join(STILL_DIR, fileId);
@@ -944,6 +1022,12 @@ app.post("/api/camera/stills", async (req, res) => {
       favorite: false,
     };
     saveStillMeta(meta);
+    const source =
+      still && typeof still.source === "string"
+        ? still.source
+        : still && still.width === CAMERA_PIPE_WIDTH && still.height === CAMERA_PIPE_HEIGHT
+          ? "stream"
+          : "capture";
     res.json({
       id: fileId,
       url: "/stills/" + encodeURIComponent(fileId),
@@ -952,6 +1036,7 @@ app.post("/api/camera/stills", async (req, res) => {
       size: still.buffer.length,
       name: meta[fileId].name,
       favorite: false,
+      source,
     });
   } catch (err) {
     console.error("Camera still save error:", err.message);

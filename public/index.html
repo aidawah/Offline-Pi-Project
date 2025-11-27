@@ -211,38 +211,16 @@
                       placeholder="Optional name"
                     />
                   </label>
-                  <label class="cam-field">
-                    <span>Width</span>
-                    <input
-                      class="map-input"
-                      id="stillWidthInput"
-                      type="number"
-                      min="320"
-                      max="4656"
-                      step="1"
-                      inputmode="numeric"
-                      readonly
-                    />
-                  </label>
-                  <label class="cam-field">
-                    <span>Height</span>
-                    <input
-                      class="map-input"
-                      id="stillHeightInput"
-                      type="number"
-                      min="240"
-                      max="3496"
-                      step="1"
-                      inputmode="numeric"
-                      readonly
-                    />
-                  </label>
+                  <div class="cam-field cam-lock">
+                    <span>Resolution</span>
+                    <div class="cam-lock-value">1600 x 900 (locked)</div>
+                  </div>
                 </div>
                 <div class="cam-buttons">
                   <button class="map-btn" id="captureStillBtn">Capture still</button>
                 </div>
                 <div class="cam-note" id="cameraStillNote">
-                  Uses <code>libcamera-still</code>. Size locked for consistent snapshots.
+                  Saves a frame from the live stream when available; otherwise uses <code>libcamera-still</code>.
                 </div>
               </div>
 

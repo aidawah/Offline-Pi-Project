@@ -1,11 +1,3 @@
-const clampDim = (val, min, max, fallback) => {
-  const num = Number.parseInt(val, 10);
-  if (Number.isFinite(num)) {
-    return Math.max(min, Math.min(num, max));
-  }
-  return fallback;
-};
-
 export function initCamera(isActive) {
   const liveImg = document.getElementById("cameraLiveImg");
   const placeholder = document.getElementById("cameraPlaceholder");
@@ -16,8 +8,6 @@ export function initCamera(isActive) {
   const openStreamBtn = document.getElementById("openStreamBtn");
   const grabStillBtn = document.getElementById("grabStillBtn");
   const captureStillBtn = document.getElementById("captureStillBtn");
-  const stillWidthInput = document.getElementById("stillWidthInput");
-  const stillHeightInput = document.getElementById("stillHeightInput");
   const stillNameInput = document.getElementById("stillNameInput");
   const stillNote = document.getElementById("cameraStillNote");
   const refreshStatusBtn = document.getElementById("cameraRefreshBtn");
@@ -40,7 +30,6 @@ export function initCamera(isActive) {
   const lockedWidth = defaults.width || 1600;
   const lockedHeight = defaults.height || 900;
   let streamUrl = cameraCfg.streamUrl || "/camera/stream";
-  let lastStill = null;
   let savedStills = [];
   let selectedStillId = null;
   let pendingSelectId = null;
@@ -116,7 +105,7 @@ export function initCamera(isActive) {
     const msg = (err && err.message ? String(err.message) : "") || "";
     const lower = msg.toLowerCase();
     if (lower.includes("device or resource busy") || lower.includes("pipeline handler in use")) {
-      return "Camera is busy. Stop other camera apps (libcamera-vid/RTSP) and try again.";
+      return "Camera is busy. Try again or stop other camera apps if one has locked the sensor.";
     }
     if (lower.includes("not available")) {
       return "Capture tool missing. Install libcamera-still or rpicam-still.";
@@ -211,9 +200,7 @@ export function initCamera(isActive) {
         statusMeta.textContent = [note, detail].filter(Boolean).join(" · ");
       }
       updateLiveSub();
-      if (streamUrl && !lastStill) {
-        attachStream(true);
-      }
+      if (streamUrl) attachStream(true);
     } catch (err) {
       if (statusText) statusText.textContent = "Status error";
       if (statusDot) statusDot.classList.add("offline");
@@ -233,11 +220,30 @@ export function initCamera(isActive) {
       setPlaceholder("No stream URL set. Set CAMERA_STREAM_URL or capture a still.");
       return;
     }
+    let nextUrl = streamUrl;
+    if (forceReload) {
+      const sep = streamUrl.includes("?") ? "&" : "?";
+      nextUrl = streamUrl + `${sep}ts=${Date.now()}`;
+    }
     if (forceReload || !liveImg.src) {
-      liveImg.src = streamUrl;
+      liveImg.src = nextUrl;
     }
     liveImg.style.display = "block";
     hidePlaceholder();
+  }
+
+  async function restartCameraStream() {
+    if (!streamUrl) return;
+    if (!streamUrl.startsWith("/camera/stream")) {
+      attachStream(true);
+      return;
+    }
+    try {
+      await fetch("/api/camera/restart-stream", { method: "POST" });
+    } catch (_) {
+      // keep going; attachStream will retry
+    }
+    attachStream(true);
   }
 
   if (liveImg) {
@@ -266,8 +272,6 @@ export function initCamera(isActive) {
       if (!res.ok || !data.url) {
         throw new Error((data && data.error) || "Snapshot failed");
       }
-      lastStill = data.url;
-      setLiveImage(data.url);
       pendingSelectId = data.id;
       if (stillNote) {
         stillNote.textContent = "Captured and saved " + (data.width || lockedWidth) + "x" + (data.height || lockedHeight) + " JPEG.";
@@ -277,6 +281,7 @@ export function initCamera(isActive) {
           "Last still captured (" + (data.width || lockedWidth) + "x" + (data.height || lockedHeight) + ")";
       }
       await loadStills();
+      if (streamUrl) attachStream(true);
     } catch (err) {
       if (stillNote) {
         stillNote.textContent = friendlyCameraError(err);
@@ -286,12 +291,6 @@ export function initCamera(isActive) {
   }
 
   function setDefaults() {
-    if (stillWidthInput) {
-      stillWidthInput.value = lockedWidth;
-    }
-    if (stillHeightInput) {
-      stillHeightInput.value = lockedHeight;
-    }
     updateLiveSub();
   }
 
@@ -423,7 +422,10 @@ export function initCamera(isActive) {
     captureStillBtn.addEventListener("click", captureStill);
   }
   if (refreshStatusBtn) {
-    refreshStatusBtn.addEventListener("click", () => refreshStatus());
+    refreshStatusBtn.addEventListener("click", async () => {
+      await restartCameraStream();
+      refreshStatus();
+    });
   }
   if (refreshStillsBtn) {
     refreshStillsBtn.addEventListener("click", () => loadStills());
