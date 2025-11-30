@@ -48,7 +48,7 @@ export function initMap() {
   // MapTiler configuration for online mode
   const MAPTILER_KEY = 'B7FdQPvzKbl0tlzK7dq7';
   const mapTilerSource = {
-    url: `https://api.maptiler.com/maps/outdoor-v2/{z}/{x}/{y}.png?key=${MAPTILER_KEY}`,
+    url: `https://api.maptiler.com/maps/outdoor-v4/{z}/{x}/{y}.png?key=${MAPTILER_KEY}`,
     attribution: '<a href="https://www.maptiler.com/copyright/" target="_blank">&copy; MapTiler</a> <a href="https://www.openstreetmap.org/copyright" target="_blank">&copy; OpenStreetMap contributors</a>',
     maxZoom: 17,
     tileSize: 512,
@@ -636,9 +636,20 @@ export function initMap() {
 
   if (campSetCenterBtn) {
     campSetCenterBtn.addEventListener("click", () => {
-      ensureColoradoMap();
-      syncInputsToCenter();
-      updateCampStatus("Coordinates set to current map center. Click 'Save camp location' to save.");
+      const map = ensureColoradoMap();
+      if (!map) {
+        updateCampStatus("Map not initialized yet. Please wait.");
+        return;
+      }
+      const center = map.getCenter();
+      if (campLatInput) campLatInput.value = center.lat.toFixed(6);
+      if (campLonInput) campLonInput.value = center.lng.toFixed(6);
+      console.log("[map] Set inputs to map center:", center.lat.toFixed(6), center.lng.toFixed(6));
+      updateCampStatus(
+        "Coordinates set to map center: " +
+        center.lat.toFixed(6) + ", " + center.lng.toFixed(6) +
+        " - Now click 'Save camp location' to save."
+      );
     });
   }
 
