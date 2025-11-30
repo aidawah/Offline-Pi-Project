@@ -1,0 +1,48 @@
+.inventory-body {
+  background: radial-gradient(circle at 10% 10%, rgba(34, 211, 238, 0.04), rgba(5, 9, 12, 0.95));
+  min-height: 100vh;
+}
+
+.inventory-shell {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 2rem;
+}
+
+.inventory-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.inventory-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.inventory-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(340px, 1fr);
+  gap: 1rem;
+}
+
+@media (max-width: 960px) {
+  .inventory-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.inventory-left {
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  border-radius: 0.9rem;
+  background: #0a1020;
+  padding: 0.9rem;
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.45);
+}
+
+.inventory-right {
+  min-height: 320px;
+}
