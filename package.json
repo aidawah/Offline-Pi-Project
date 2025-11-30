@@ -5,7 +5,8 @@
   "main": "server.js",
   "scripts": {
     "build:css": "tailwindcss -i ./public/css/tailwind-input.css -o ./public/css/tailwind.css --minify",
-    "start": "node server.js"
+    "start": "node server.js",
+    "update": "npm install && npm run build:css && sudo systemctl restart pi-control.service"
   },
   "author": "",
   "license": "MIT",
