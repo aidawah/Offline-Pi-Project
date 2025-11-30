@@ -20,7 +20,7 @@ const WEATHER_LON = Number.isFinite(parseFloat(process.env.WEATHER_LON))
 const WEATHER_CACHE_MS = 15 * 60 * 1000;
 const MAP_TILE_URL =
   process.env.MAP_TILE_URL ||
-  "http://127.0.0.1:8090/styles/bright/{z}/{x}/{y}.png"; // prefer local tileserver
+  "http://127.0.0.1:8090/styles/basic-preview/{z}/{x}/{y}.png"; // prefer local tileserver
 const MAP_TILE_ATTRIB =
   process.env.MAP_TILE_ATTRIB || "(local tiles - set MAP_TILE_ATTRIB)";
 const MAP_TILE_MAX_ZOOM = Number.isFinite(parseInt(process.env.MAP_TILE_MAX_ZOOM, 10))

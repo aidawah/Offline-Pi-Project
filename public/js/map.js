@@ -48,6 +48,7 @@ export function initMap() {
     streetUrl && streetUrl.includes("127.0.0.1") && typeof window !== "undefined"
       ? streetUrl.replace("127.0.0.1", window.location.hostname)
       : streetUrl;
+  console.log("[map] tileConfig url", streetUrl, "rewritten", rewrittenStreetUrl);
   const streetSource = {
     url: rewrittenStreetUrl,
     attribution: tileConfig.attribution || "(c) OpenStreetMap contributors",
