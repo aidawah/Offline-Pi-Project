@@ -11,6 +11,7 @@
   "license": "MIT",
   "dependencies": {
     "express": "^4.19.0",
+    "leaflet": "^1.9.4",
     "node-dht-sensor": "^0.4.3"
   },
   "devDependencies": {

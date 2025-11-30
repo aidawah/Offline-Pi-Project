@@ -43,7 +43,19 @@ export function initMap() {
   const zoomOutBtn = document.getElementById("zoomOutBtn");
 
   const tileConfig = (window.PICO_CONFIG && window.PICO_CONFIG.tiles) || {};
-  const defaultMax = Number.isFinite(tileConfig.maxZoom) ? tileConfig.maxZoom : 14;
+  const defaultMax = Number.isFinite(tileConfig.maxZoom) ? tileConfig.maxZoom : 17;
+
+  // MapTiler configuration for online mode
+  const MAPTILER_KEY = 'B7FdQPvzKbl0tlzK7dq7';
+  const mapTilerSource = {
+    url: `https://api.maptiler.com/maps/outdoor-v2/{z}/{x}/{y}.png?key=${MAPTILER_KEY}`,
+    attribution: '<a href="https://www.maptiler.com/copyright/" target="_blank">&copy; MapTiler</a> <a href="https://www.openstreetmap.org/copyright" target="_blank">&copy; OpenStreetMap contributors</a>',
+    maxZoom: 17,
+    tileSize: 512,
+    zoomOffset: -1,
+    minZoom: 1,
+  };
+
   const normalizeTileUrl = (url) => {
     if (!url) return url;
     let out = url;
@@ -55,28 +67,25 @@ export function initMap() {
     }
     return out;
   };
-  const streetUrl = normalizeTileUrl(
+
+  const offlineUrl = normalizeTileUrl(
     tileConfig.url || "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
   );
-  console.log("[map] tileConfig url", tileConfig.url, "normalized", streetUrl);
-  const streetSource = {
-    url: streetUrl,
+  console.log("[map] tileConfig url", tileConfig.url, "normalized", offlineUrl);
+
+  const offlineSource = {
+    url: offlineUrl,
     attribution: tileConfig.attribution || "(c) OpenStreetMap contributors",
     maxZoom: defaultMax,
     maxNativeZoom: Number.isFinite(tileConfig.maxNativeZoom) ? tileConfig.maxNativeZoom : defaultMax,
   };
-  const fallbackSource = {
-    url: tileConfig.fallbackUrl || "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-    attribution: tileConfig.fallbackAttribution || "(c) OpenStreetMap contributors",
-    maxZoom: defaultMax,
-  };
 
   let coMap = null;
   let tileLayers = null;
-  let activeLayer = "streets";
+  let activeLayer = "online";
   let locationMarker = null;
   let mapSizeTimer = null;
-  let fallbackLayerAdded = false;
+  let isOnline = navigator.onLine;
   const CAMP_STORAGE_KEY = "picoCampLocation";
   let savedCamp = loadCampLocation();
   let geoTimeout = null;
@@ -209,6 +218,7 @@ export function initMap() {
     const center = coMap.getCenter();
     const zoom = coMap.getZoom();
     const prefix = message ? message + " - " : "";
+    const layerStatus = activeLayer === "online" ? "🌐 Online" : "📴 Offline";
     mapMetaEl.textContent =
       prefix +
       "Center " +
@@ -217,8 +227,8 @@ export function initMap() {
       center.lng.toFixed(3) +
       " | Zoom " +
       zoom +
-      " | Layer: " +
-      (activeLayer === "topo" ? "Topo" : "Street");
+      " | " +
+      layerStatus;
   }
 
   function buildQuickLinks() {
@@ -235,11 +245,19 @@ export function initMap() {
       return null;
     }
 
+    // Create tile layers for both online and offline modes
     tileLayers = {
-      streets: L.tileLayer(streetSource.url, {
-        maxZoom: streetSource.maxZoom,
-        maxNativeZoom: streetSource.maxNativeZoom,
-        attribution: streetSource.attribution,
+      online: L.tileLayer(mapTilerSource.url, {
+        maxZoom: mapTilerSource.maxZoom,
+        tileSize: mapTilerSource.tileSize,
+        zoomOffset: mapTilerSource.zoomOffset,
+        attribution: mapTilerSource.attribution,
+        crossOrigin: true,
+      }),
+      offline: L.tileLayer(offlineSource.url, {
+        maxZoom: offlineSource.maxZoom,
+        maxNativeZoom: offlineSource.maxNativeZoom,
+        attribution: offlineSource.attribution,
       }),
     };
 
@@ -250,36 +268,79 @@ export function initMap() {
       worldCopyJump: true,
     });
 
-    function addFallbackLayer() {
-      if (fallbackLayerAdded || !coMap || !fallbackSource) return;
-      fallbackLayerAdded = true;
-      const layer = L.tileLayer(fallbackSource.url, {
-        maxZoom: fallbackSource.maxZoom,
-        attribution: fallbackSource.attribution,
-      });
-      tileLayers.fallback = layer;
-      coMap.addLayer(layer);
-      activeLayer = "streets";
-      updateMapMeta("Using fallback tiles");
+    // Function to switch between online and offline tile layers
+    function switchToOffline() {
+      if (!coMap || !tileLayers) return;
+      console.log("[map] Switching to offline tiles");
+      if (tileLayers.online && coMap.hasLayer(tileLayers.online)) {
+        coMap.removeLayer(tileLayers.online);
+      }
+      if (tileLayers.offline && !coMap.hasLayer(tileLayers.offline)) {
+        coMap.addLayer(tileLayers.offline);
+      }
+      activeLayer = "offline";
+      updateMapMeta("Using offline tiles");
+      if (mapTileNoteEl) {
+        mapTileNoteEl.textContent = "📴 Offline mode - Using local tiles (MAP_TILE_URL)";
+      }
+      if (mapLayerBtn) {
+        mapLayerBtn.textContent = "Switch to Online";
+      }
     }
 
-    const watchForFallback = (layer) => {
-      if (!layer) return;
-      layer.on("tileerror", (ev) => {
-        console.error("[map] tile load error", {
-          url: ev?.tile?.src,
-          message: ev?.error?.message,
-        });
-        if (mapMetaEl) {
-          mapMetaEl.textContent = "Tile error: check MAP_TILE_URL host/port reachable from this device.";
-        }
-        addFallbackLayer();
+    function switchToOnline() {
+      if (!coMap || !tileLayers) return;
+      console.log("[map] Switching to online tiles");
+      if (tileLayers.offline && coMap.hasLayer(tileLayers.offline)) {
+        coMap.removeLayer(tileLayers.offline);
+      }
+      if (tileLayers.online && !coMap.hasLayer(tileLayers.online)) {
+        coMap.addLayer(tileLayers.online);
+      }
+      activeLayer = "online";
+      updateMapMeta("Using online MapTiler tiles");
+      if (mapTileNoteEl) {
+        mapTileNoteEl.textContent = "🌐 Online mode - Using MapTiler outdoor maps";
+      }
+      if (mapLayerBtn) {
+        mapLayerBtn.textContent = "Switch to Offline";
+      }
+    }
+
+    // Watch for tile errors and fall back to offline
+    tileLayers.online.on("tileerror", (ev) => {
+      console.error("[map] Online tile load error, falling back to offline", {
+        url: ev?.tile?.src,
+        message: ev?.error?.message,
       });
-    };
+      switchToOffline();
+    });
 
-    Object.values(tileLayers).forEach((layer) => watchForFallback(layer));
+    // Start with appropriate layer based on network status
+    if (isOnline) {
+      tileLayers.online.addTo(coMap);
+      if (mapTileNoteEl) {
+        mapTileNoteEl.textContent = "🌐 Online mode - Using MapTiler outdoor maps";
+      }
+    } else {
+      tileLayers.offline.addTo(coMap);
+      if (mapTileNoteEl) {
+        mapTileNoteEl.textContent = "📴 Offline mode - Using local tiles";
+      }
+    }
 
-    tileLayers[activeLayer].addTo(coMap);
+    // Listen for online/offline events
+    window.addEventListener("online", () => {
+      console.log("[map] Network came online");
+      isOnline = true;
+      switchToOnline();
+    });
+
+    window.addEventListener("offline", () => {
+      console.log("[map] Network went offline");
+      isOnline = false;
+      switchToOffline();
+    });
     L.control.zoom({ position: "topright" }).addTo(coMap);
     L.control.scale({ position: "bottomleft", imperial: true, metric: true }).addTo(coMap);
 
@@ -331,10 +392,36 @@ export function initMap() {
 
   function toggleLayer() {
     if (!coMap || !tileLayers) return;
-    if (mapTileNoteEl) {
-      mapTileNoteEl.textContent = "Offline tiles in use (MAP_TILE_URL). Fallback: OpenStreetMap.";
+
+    if (activeLayer === "online") {
+      // Switch to offline
+      if (tileLayers.online && coMap.hasLayer(tileLayers.online)) {
+        coMap.removeLayer(tileLayers.online);
+      }
+      if (tileLayers.offline && !coMap.hasLayer(tileLayers.offline)) {
+        coMap.addLayer(tileLayers.offline);
+      }
+      activeLayer = "offline";
+      if (mapLayerBtn) mapLayerBtn.textContent = "Switch to Online";
+      if (mapTileNoteEl) {
+        mapTileNoteEl.textContent = "📴 Offline mode - Using local tiles (MAP_TILE_URL)";
+      }
+      updateMapMeta("Switched to offline tiles");
+    } else {
+      // Switch to online
+      if (tileLayers.offline && coMap.hasLayer(tileLayers.offline)) {
+        coMap.removeLayer(tileLayers.offline);
+      }
+      if (tileLayers.online && !coMap.hasLayer(tileLayers.online)) {
+        coMap.addLayer(tileLayers.online);
+      }
+      activeLayer = "online";
+      if (mapLayerBtn) mapLayerBtn.textContent = "Switch to Offline";
+      if (mapTileNoteEl) {
+        mapTileNoteEl.textContent = "🌐 Online mode - Using MapTiler outdoor maps";
+      }
+      updateMapMeta("Switched to online tiles");
     }
-    updateMapMeta("Layer: Street");
   }
 
   function resetMapView() {
@@ -414,9 +501,10 @@ export function initMap() {
   syncInputsToCenter();
 
   if (mapLayerBtn) {
-    mapLayerBtn.textContent = "Tiles: Offline";
-    mapLayerBtn.disabled = true;
-    mapLayerBtn.classList.add("disabled");
+    mapLayerBtn.textContent = isOnline ? "Switch to Offline" : "Switch to Online";
+    mapLayerBtn.disabled = false;
+    mapLayerBtn.classList.remove("disabled");
+    mapLayerBtn.addEventListener("click", toggleLayer);
   }
   if (mapResetBtn) {
     mapResetBtn.addEventListener("click", resetMapView);
