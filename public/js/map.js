@@ -253,8 +253,17 @@ export function initMap() {
     }
 
     const watchForFallback = (layer) => {
-      if (!fallbackSource || !layer) return;
-      layer.on("tileerror", addFallbackLayer);
+      if (!layer) return;
+      layer.on("tileerror", (ev) => {
+        console.error("[map] tile load error", {
+          url: ev?.tile?.src,
+          message: ev?.error?.message,
+        });
+        if (mapMetaEl) {
+          mapMetaEl.textContent = "Tile error: check MAP_TILE_URL host/port reachable from this device.";
+        }
+        addFallbackLayer();
+      });
     };
 
     Object.values(tileLayers).forEach((layer) => watchForFallback(layer));
