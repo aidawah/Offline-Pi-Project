@@ -488,6 +488,15 @@
     @apply bg-cyan-500/10 text-cyan-400 border border-cyan-500/30;
   }
 
+  .map-chip-btn {
+    @apply px-3 py-1.5 rounded-lg text-xs font-semibold;
+    @apply bg-gradient-to-b from-slate-800 to-slate-900;
+    @apply text-cyan-400 border border-cyan-500/40;
+    @apply cursor-pointer transition-all duration-200;
+    @apply hover:border-cyan-400 hover:bg-cyan-500/10 hover:shadow-[0_4px_12px_rgba(34,211,238,0.2)];
+    @apply active:scale-95;
+  }
+
   .map-toolbar {
     @apply grid md:grid-cols-[1fr_auto] gap-4 mb-6;
   }

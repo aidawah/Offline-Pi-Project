@@ -472,17 +472,31 @@ export function initMap() {
         navigator.geolocation.getCurrentPosition(
           (pos) => {
             if (geoTimeout) clearTimeout(geoTimeout);
-            placeMarker([pos.coords.latitude, pos.coords.longitude], "Pinned your location");
+            const accuracy = pos.coords.accuracy;
+            let accuracyLabel = "";
+            if (accuracy < 50) {
+              accuracyLabel = " (±" + Math.round(accuracy) + "m - high accuracy)";
+            } else if (accuracy < 200) {
+              accuracyLabel = " (±" + Math.round(accuracy) + "m - medium accuracy)";
+            } else {
+              accuracyLabel = " (±" + Math.round(accuracy) + "m - low accuracy)";
+            }
+            placeMarker([pos.coords.latitude, pos.coords.longitude], "Your location" + accuracyLabel);
           },
           async (err) => {
             if (geoTimeout) clearTimeout(geoTimeout);
             if (useSavedCamp()) return;
             const ipResult = await locateByIP();
             if (ipResult) {
-              placeMarker(ipResult.coords, ipResult.label);
+              placeMarker(ipResult.coords, ipResult.label + " (IP-based, low accuracy)");
             } else {
               handleFailure("Location failed: " + err.message);
             }
+          },
+          {
+            enableHighAccuracy: true,
+            timeout: 7000,
+            maximumAge: 0
           }
         );
       } else {
@@ -493,7 +507,7 @@ export function initMap() {
           }
           if (ipResult) {
             if (geoTimeout) clearTimeout(geoTimeout);
-            placeMarker(ipResult.coords, ipResult.label);
+            placeMarker(ipResult.coords, ipResult.label + " (IP-based, low accuracy)");
           } else {
             handleFailure(
               "Location blocked (browser needs HTTPS/localhost) and IP lookup failed."
