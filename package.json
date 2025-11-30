@@ -4,7 +4,7 @@
   "description": "Offline Pi car control dashboard (hotspot, system stats, networking)",
   "main": "server.js",
   "scripts": {
-      "build:css": "tailwindcss -i ./public/css/tailwind-input.css -o ./public/css/tailwind.css --minify",
+    "build:css": "tailwindcss -i ./public/css/tailwind-input.css -o ./public/css/tailwind.css --minify",
     "start": "node server.js"
   },
   "author": "",
