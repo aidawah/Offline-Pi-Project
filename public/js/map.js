@@ -41,8 +41,15 @@ export function initMap() {
 
   const tileConfig = (window.PICO_CONFIG && window.PICO_CONFIG.tiles) || {};
   const defaultMax = Number.isFinite(tileConfig.maxZoom) ? tileConfig.maxZoom : 14;
+  const streetUrl =
+    tileConfig.url ||
+    "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
+  const rewrittenStreetUrl =
+    streetUrl && streetUrl.includes("127.0.0.1") && typeof window !== "undefined"
+      ? streetUrl.replace("127.0.0.1", window.location.hostname)
+      : streetUrl;
   const streetSource = {
-    url: tileConfig.url || "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+    url: rewrittenStreetUrl,
     attribution: tileConfig.attribution || "(c) OpenStreetMap contributors",
     maxZoom: defaultMax,
     maxNativeZoom: Number.isFinite(tileConfig.maxNativeZoom) ? tileConfig.maxNativeZoom : defaultMax,

@@ -4,30 +4,32 @@
     <meta charset="utf-8" />
     <title>Stills Inventory</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <link rel="stylesheet" href="/css/main.css" />
+    <link rel="stylesheet" href="/css/tailwind.css" />
     <link rel="stylesheet" href="/css/inventory.css" />
     <script src="/config.js"></script>
   </head>
-  <body class="inventory-body">
-    <div class="inventory-shell">
-      <header class="inventory-header">
-        <div>
-          <div class="eyebrow">Camera stills</div>
-          <h1>Inventory</h1>
-          <p>Browse, rename, download, and delete saved stills without leaving live view.</p>
+  <body class="inventory-body bg-slate-950 text-slate-100 min-h-screen">
+    <div class="inventory-shell max-w-6xl mx-auto px-4 py-6">
+      <header class="inventory-header flex items-start justify-between gap-4 mb-4">
+        <div class="space-y-1">
+          <div class="text-sm inline-flex px-3 py-1 rounded-full border border-emerald-500/50 bg-emerald-500/10">
+            Camera stills
+          </div>
+          <h1 class="text-2xl font-bold">Inventory</h1>
+          <p class="text-slate-300">Browse, rename, download, and delete saved stills without leaving live view.</p>
         </div>
-        <div class="inventory-actions">
-          <button class="map-btn" id="refreshStillsBtn">Refresh</button>
-          <a class="map-btn subtle" href="/" id="backToCamera">Back to camera</a>
+        <div class="inventory-actions flex gap-2 flex-wrap">
+          <button class="map-btn px-4 py-2 rounded-md bg-emerald-500 text-slate-900 font-semibold" id="refreshStillsBtn">Refresh</button>
+          <a class="map-btn subtle px-4 py-2 rounded-md border border-slate-700 text-slate-100" href="/" id="backToCamera">Back to camera</a>
         </div>
       </header>
 
-      <div class="inventory-grid">
-        <div class="inventory-left">
-          <div class="cam-still-grid" id="stillGrid"></div>
-          <div class="cam-empty" id="stillEmpty">No stills yet. Capture one from the camera view.</div>
+      <div class="inventory-grid grid gap-4 md:grid-cols-3">
+        <div class="inventory-left md:col-span-2 border border-slate-800 rounded-xl bg-slate-900/60 p-3 shadow-lg">
+          <div class="cam-still-grid grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3" id="stillGrid"></div>
+          <div class="cam-empty text-slate-400 text-sm mt-3" id="stillEmpty">No stills yet. Capture one from the camera view.</div>
         </div>
-        <div class="inventory-right cam-selected" id="selectedStillCard">
+        <div class="inventory-right cam-selected border border-slate-800 rounded-xl bg-slate-900/60 p-3 shadow-lg" id="selectedStillCard">
           <div class="cam-selected-preview">
             <img id="selectedStillImg" alt="Selected still" />
             <div class="cam-empty" id="selectedStillEmpty">Select a still to preview.</div>

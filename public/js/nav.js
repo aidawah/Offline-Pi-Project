@@ -10,7 +10,13 @@ export function initNav(views, onViewChange) {
       b.classList.toggle("active", b.dataset.view === view);
     });
     Object.entries(views).forEach(([key, el]) => {
-      el.classList.toggle("active", key === view);
+      const isActive = key === view;
+      el.classList.toggle("active", isActive);
+      if (isActive) {
+        el.classList.remove("hidden");
+      } else {
+        el.classList.add("hidden");
+      }
     });
     if (typeof onViewChange === "function") {
       onViewChange(view);

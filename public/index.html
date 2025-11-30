@@ -5,108 +5,99 @@
     <title>Pi Control</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="stylesheet" href="/vendor/leaflet/leaflet.css" />
-    <link rel="stylesheet" href="/css/main.css?v=2" />
+    <link rel="stylesheet" href="/css/tailwind.css" />
     <script src="/config.js"></script>
   </head>
-  <body>
-    <header>
-      <div class="logo">
-        <div class="logo-dot"></div>
-        <span>Pi Car Control</span>
+  <body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col">
+    <header class="sticky top-0 z-10 backdrop-blur bg-slate-900/80 border-b border-slate-800">
+      <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
+        <div class="flex items-center gap-2">
+          <div class="h-3 w-3 rounded-full bg-emerald-400 shadow-md shadow-emerald-500/50"></div>
+          <span class="font-semibold text-lg">Pi Car Control</span>
+        </div>
+        <nav class="flex flex-wrap gap-2">
+          <button class="px-3 py-2 rounded-md border border-slate-700 text-sm nav-btn active" data-view="home">Home</button>
+          <button class="px-3 py-2 rounded-md border border-slate-700 text-sm nav-btn" data-view="camera">Camera</button>
+          <button class="px-3 py-2 rounded-md border border-slate-700 text-sm nav-btn" data-view="car-temp">Car Temp</button>
+          <button class="px-3 py-2 rounded-md border border-slate-700 text-sm nav-btn" data-view="map">Colorado Map</button>
+          <button class="px-3 py-2 rounded-md border border-slate-700 text-sm nav-btn" data-view="system">System</button>
+          <button class="px-3 py-2 rounded-md border border-slate-700 text-sm nav-btn" data-view="weather">Weather</button>
+          <button class="px-3 py-2 rounded-md border border-slate-700 text-sm nav-btn" data-view="network">Networking</button>
+        </nav>
       </div>
-      <nav>
-        <button class="nav-btn active" data-view="home">Home</button>
-        <button class="nav-btn" data-view="camera">Camera</button>
-        <button class="nav-btn" data-view="car-temp">Car Temp</button>
-        <button class="nav-btn" data-view="map">Colorado Map</button>
-        <button class="nav-btn" data-view="system">System</button>
-        <button class="nav-btn" data-view="weather">Weather</button>
-        <button class="nav-btn" data-view="network">Networking</button>
-      </nav>
     </header>
 
-    <main>
+    <main class="max-w-6xl mx-auto px-4 py-6 w-full flex-1">
       <!-- HOME VIEW -->
       <section id="view-home" class="view active">
-        <div class="home-shell">
-          <div class="home-hero">
-            <div class="hero-copy">
-              <p class="eyebrow">Offline Pi dashboard</p>
-              <h1 class="hero-title">Control the essentials without the clutter.</h1>
-              <p class="hero-lede">
-                Jump straight to stats, the Colorado map, the forecast, or hotspot clients in
-                two clicks.
+        <div class="grid gap-6">
+          <div class="grid md:grid-cols-2 gap-4 rounded-xl border border-slate-800 bg-slate-900/60 p-5 shadow-xl">
+            <div class="space-y-3">
+              <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-emerald-500/50 bg-emerald-500/10 text-sm">Offline Pi dashboard</span>
+              <h1 class="text-3xl font-bold">Control the essentials without the clutter.</h1>
+              <p class="text-slate-300">
+                Jump straight to stats, the Colorado map, the forecast, or hotspot clients in two clicks.
               </p>
-              <div class="hero-actions">
-                <button class="cta" data-nav-target="camera">Open camera</button>
-                <button class="cta ghost" data-nav-target="map">Open map</button>
+              <div class="flex flex-wrap gap-2">
+                <button class="px-4 py-2 rounded-md bg-emerald-500 text-slate-900 font-semibold" data-nav-target="camera">Open camera</button>
+                <button class="px-4 py-2 rounded-md border border-slate-700 text-slate-100" data-nav-target="map">Open map</button>
               </div>
-              <div class="hero-meta">
-                <div class="meta-item">
-                  <span class="meta-label">Hotspot</span>
-                  <span class="meta-value strong">PiCarCam</span>
+              <div class="grid sm:grid-cols-3 gap-3 text-sm">
+                <div class="p-3 rounded-lg bg-slate-800/60 border border-slate-700">
+                  <div class="text-slate-400">Hotspot</div>
+                  <div class="font-semibold">PiCarCam</div>
                 </div>
-                <div class="meta-item">
-                  <span class="meta-label">Dashboard</span>
-                  <span class="meta-value"><code>10.42.0.1:3000</code></span>
+                <div class="p-3 rounded-lg bg-slate-800/60 border border-slate-700">
+                  <div class="text-slate-400">Dashboard</div>
+                  <div class="font-semibold"><code>10.42.0.1:3000</code></div>
                 </div>
-                <div class="meta-item">
-                  <span class="meta-label">Views</span>
-                  <span class="meta-value">Camera · System · Map · Weather · Network</span>
+                <div class="p-3 rounded-lg bg-slate-800/60 border border-slate-700">
+                  <div class="text-slate-400">Views</div>
+                  <div class="font-semibold">Camera · System · Map · Weather · Network</div>
                 </div>
               </div>
             </div>
-
-            <div class="hero-card">
-              <div class="card-heading">Quick start</div>
-              <ol class="quick-steps compact">
-                <li>
-                  <div class="step-tag">1</div>
-                  <div>Connect to Wi‑Fi <strong>PiCarCam</strong>.</div>
-                </li>
-                <li>
-                  <div class="step-tag">2</div>
-                  <div>Go to <code>10.42.0.1:3000</code>.</div>
-                </li>
-                <li>
-                  <div class="step-tag">3</div>
-                  <div>Pick a view below.</div>
-                </li>
+            <div class="p-4 rounded-xl border border-slate-800 bg-slate-900/60 shadow-lg">
+              <h2 class="text-lg font-semibold mb-3">Quick start</h2>
+              <ol class="space-y-2 text-sm text-slate-300">
+                <li class="flex gap-3"><span class="font-bold text-emerald-400">1</span>Connect to Wi‑Fi <strong>PiCarCam</strong>.</li>
+                <li class="flex gap-3"><span class="font-bold text-emerald-400">2</span>Go to <code>10.42.0.1:3000</code>.</li>
+                <li class="flex gap-3"><span class="font-bold text-emerald-400">3</span>Pick a view below.</li>
               </ol>
             </div>
           </div>
 
-          <div class="home-feature-grid">
-            <div class="feature-card">
-              <div class="feature-title">Camera</div>
-              <p>Live view, snapshots, and IMX519 notes.</p>
+          <div class="grid sm:grid-cols-3 gap-4">
+            <div class="p-4 rounded-xl border border-slate-800 bg-slate-900/50">
+              <div class="font-semibold text-lg">Camera</div>
+              <p class="text-sm text-slate-300">Live view, snapshots, and IMX519 notes.</p>
             </div>
-            <div class="feature-card">
-              <div class="feature-title">Car temp</div>
-              <p>Live DHT11 temperature and humidity from the Pi.</p>
+            <div class="p-4 rounded-xl border border-slate-800 bg-slate-900/50">
+              <div class="font-semibold text-lg">Car temp</div>
+              <p class="text-sm text-slate-300">Live DHT11 temperature and humidity from the Pi.</p>
             </div>
-            <div class="feature-card">
-              <div class="feature-title">System</div>
-              <p>Watch CPU temp, load, memory, and fan speed without digging.</p>
+            <div class="p-4 rounded-xl border border-slate-800 bg-slate-900/50">
+              <div class="font-semibold text-lg">System</div>
+              <p class="text-sm text-slate-300">CPU temp, load, memory, and fan speed.</p>
             </div>
-            <div class="feature-card">
-              <div class="feature-title">Map</div>
-              <p>Colorado-focused map with saved camp pins and quick jumps.</p>
+            <div class="p-4 rounded-xl border border-slate-800 bg-slate-900/50">
+              <div class="font-semibold text-lg">Map</div>
+              <p class="text-sm text-slate-300">Colorado-focused map with saved camps.</p>
             </div>
-            <div class="feature-card">
-              <div class="feature-title">Weather</div>
-              <p>Seven-day forecast with your saved coordinates and quick refresh.</p>
+            <div class="p-4 rounded-xl border border-slate-800 bg-slate-900/50">
+              <div class="font-semibold text-lg">Weather</div>
+              <p class="text-sm text-slate-300">Seven-day forecast with saved coordinates.</p>
             </div>
-            <div class="feature-card">
-              <div class="feature-title">Hotspot</div>
-              <p>See who is connected on wlan0 and toggle Ethernet if needed.</p>
+            <div class="p-4 rounded-xl border border-slate-800 bg-slate-900/50">
+              <div class="font-semibold text-lg">Hotspot</div>
+              <p class="text-sm text-slate-300">See who is connected on wlan0.</p>
             </div>
           </div>
         </div>
       </section>
 
       <!-- CAR TEMP VIEW -->
-      <section id="view-car-temp" class="view">
+      <section id="view-car-temp" class="view hidden">
         <div class="card">
           <h1>Car Temperature &amp; Humidity</h1>
           <p>Live DHT11 reading from the Pi (GPIO 4 by default). Celsius, Fahrenheit, and RH%.</p>
@@ -129,7 +120,7 @@
       </section>
 
       <!-- CAMERA VIEW -->
-      <section id="view-camera" class="view">
+      <section id="view-camera" class="view hidden">
         <div class="card camera-card">
           <div class="camera-hero">
             <div>
@@ -236,7 +227,7 @@
       </section>
 
       <!-- COLORADO MAP VIEW -->
-      <section id="view-map" class="view">
+      <section id="view-map" class="view hidden">
         <div class="card map-card">
           <div class="map-header">
             <div>
@@ -324,7 +315,7 @@
       </section>
 
       <!-- SYSTEM VIEW -->
-      <section id="view-system" class="view">
+      <section id="view-system" class="view hidden">
         <div class="card">
           <h1>System Management</h1>
           <p>
@@ -441,7 +432,7 @@
       </section>
 
       <!-- WEATHER VIEW -->
-      <section id="view-weather" class="view">
+      <section id="view-weather" class="view hidden">
         <div class="card">
           <div class="weather-hero">
             <div>
@@ -506,7 +497,7 @@
       </section>
 
       <!-- NETWORKING VIEW -->
-      <section id="view-network" class="view">
+      <section id="view-network" class="view hidden">
         <div class="card">
           <h1>Networking</h1>
           <p>
