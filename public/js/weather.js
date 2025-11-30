@@ -21,6 +21,18 @@ export function initWeather(isActive) {
   const weatherSaveBtn = document.getElementById("weatherSaveBtn");
   const weatherRefreshBtn = document.getElementById("weatherRefreshBtn");
   const weatherDefaultBtn = document.getElementById("weatherDefaultBtn");
+  const iconMap = {
+    SUN: "☀️",
+    PART: "⛅",
+    CLOUD: "☁️",
+    FOG: "🌫️",
+    DRIZ: "🌦️",
+    RAIN: "🌧️",
+    ICE: "🧊",
+    SNOW: "🌨️",
+    STORM: "⛈️",
+    VAR: "⛅",
+  };
 
   let lastWeatherFetch = 0;
   let lastWeatherDays = [];
@@ -179,7 +191,7 @@ export function initWeather(isActive) {
       card.innerHTML = `
         <div class="weather-top">
           <div class="weather-label">${formatDateLabel(day.date)}</div>
-          <div class="weather-icon">${meta.icon}</div>
+          <div class="weather-icon text-2xl">${iconMap[meta.icon] || "⛅"}</div>
         </div>
         <div class="weather-temp">${hi} / ${lo}</div>
         <div class="weather-sub">${meta.label}</div>

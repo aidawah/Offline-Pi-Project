@@ -840,6 +840,7 @@ p {
   place-items: center;
   background: radial-gradient(circle at 50% 20%, rgba(34, 211, 238, 0.08), rgba(10, 14, 28, 0.9));
   box-shadow: 0 14px 30px rgba(0, 0, 0, 0.5);
+  animation: pulseGlow 6s ease-in-out infinite;
 }
 .gauge-arc {
   position: absolute;
@@ -907,6 +908,7 @@ p {
   place-items: center;
   background: radial-gradient(circle at 30% 0, #0f172a, #020617);
   overflow: hidden;
+  animation: pulseGlow 5s ease-in-out infinite;
 }
 .mini-gauge-arc {
   --value: 0;
@@ -923,6 +925,18 @@ p {
   mask: radial-gradient(farthest-side, transparent 58%, #000 60%);
   filter: drop-shadow(0 0 10px rgba(168, 85, 247, 0.7));
   transition: all 0.3s ease-out;
+}
+
+@keyframes pulseGlow {
+  0% {
+    box-shadow: 0 0 0 rgba(34, 211, 238, 0.0);
+  }
+  50% {
+    box-shadow: 0 0 18px rgba(34, 211, 238, 0.35);
+  }
+  100% {
+    box-shadow: 0 0 0 rgba(34, 211, 238, 0.0);
+  }
 }
 .mini-gauge-value {
   position: relative;
@@ -1581,6 +1595,8 @@ select:focus {
   border-radius: 0.9rem;
   padding: 0.8rem;
   box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
+  position: relative;
+  overflow: hidden;
 }
 .mini-gauge-circle {
   background: radial-gradient(circle at 50% 35%, rgba(34, 211, 238, 0.18), rgba(10, 16, 32, 0.9));
