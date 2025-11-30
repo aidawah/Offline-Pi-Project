@@ -831,13 +831,15 @@ p {
 
 /* Big circular gauge */
 .gauge-shell-main {
-  width: 230px;
-  height: 230px;
+  width: 260px;
+  height: 260px;
   margin: 0 auto;
   border-radius: 50%;
   position: relative;
   display: grid;
   place-items: center;
+  background: radial-gradient(circle at 50% 20%, rgba(34, 211, 238, 0.08), rgba(10, 14, 28, 0.9));
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.5);
 }
 .gauge-arc {
   position: absolute;
@@ -874,7 +876,7 @@ p {
   z-index: 1;
 }
 .gauge-main-value {
-  font-size: 2.6rem;
+  font-size: 2.8rem;
   font-weight: 700;
   letter-spacing: 0.06em;
 }
@@ -897,8 +899,8 @@ p {
   gap: 0.9rem;
 }
 .mini-gauge-circle {
-  width: 78px;
-  height: 78px;
+  width: 82px;
+  height: 82px;
   border-radius: 50%;
   position: relative;
   display: grid;
@@ -1102,8 +1104,8 @@ p {
 .weather-grid {
   margin-top: 1.2rem;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 0.9rem;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
 }
 .weather-controls {
   margin-top: 0.8rem;
@@ -1492,6 +1494,114 @@ code {
   font-size: 0.8rem;
 }
 
+/* ---------- Tailwind blend fixes (retain legacy styling) ---------- */
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+}
+button {
+  cursor: pointer;
+}
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+.map-btn,
+.cta,
+.weather-refresh-btn,
+.reboot-btn {
+  background: linear-gradient(180deg, #111827, #0b1224);
+  border: 1px solid rgba(148, 163, 184, 0.45);
+  border-radius: 0.65rem;
+  color: #e5e7eb;
+  padding: 0.65rem 1rem;
+  font-weight: 600;
+  transition: border-color 120ms ease, box-shadow 120ms ease, transform 80ms ease;
+}
+.map-btn:hover,
+.cta:hover,
+.weather-refresh-btn:hover,
+.reboot-btn:hover {
+  border-color: rgba(34, 211, 238, 0.9);
+  box-shadow: 0 12px 24px rgba(34, 211, 238, 0.14);
+}
+.map-btn:active,
+.cta:active,
+.weather-refresh-btn:active,
+.reboot-btn:active {
+  transform: translateY(1px);
+}
+.map-btn.subtle,
+.cta.ghost {
+  background: rgba(148, 163, 184, 0.14);
+  border-color: rgba(148, 163, 184, 0.35);
+  color: #cbd5e1;
+}
+.map-btn.danger {
+  background: rgba(239, 68, 68, 0.08);
+  border-color: rgba(239, 68, 68, 0.5);
+  color: #fecdd3;
+}
+input[type="text"],
+input[type="number"],
+input[type="search"],
+textarea,
+select {
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  color: #e5e7eb;
+  padding: 0.6rem 0.8rem;
+  border-radius: 0.55rem;
+}
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  border-color: rgba(34, 211, 238, 0.8);
+  box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.15);
+}
+.card {
+  background: linear-gradient(145deg, rgba(15, 23, 42, 0.9), rgba(12, 18, 32, 0.92));
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  border-radius: 1rem;
+  padding: 1.2rem;
+  box-shadow: 0 18px 36px rgba(0, 0, 0, 0.45);
+}
+.cam-control-card,
+.cam-facts-card {
+  background: linear-gradient(145deg, rgba(10, 23, 31, 0.85), rgba(5, 9, 12, 0.92));
+  border: 1px solid rgba(148, 163, 184, 0.25);
+}
+.mini-panel,
+.system-grid .center-panel {
+  background: rgba(8, 15, 25, 0.9);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 0.9rem;
+  padding: 0.8rem;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
+}
+.mini-gauge-circle {
+  background: radial-gradient(circle at 50% 35%, rgba(34, 211, 238, 0.18), rgba(10, 16, 32, 0.9));
+  border: 1px solid rgba(148, 163, 184, 0.25);
+}
+.mini-gauge-value,
+.gauge-main-value {
+  color: #e2e8f0;
+}
+.weather-grid .weather-card,
+.weather-detail-card {
+  background: rgba(10, 16, 28, 0.9);
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  border-radius: 0.9rem;
+  box-shadow: 0 12px 26px rgba(0, 0, 0, 0.38);
+}
+.clients-table th,
+.clients-table td {
+  border-color: rgba(148, 163, 184, 0.25);
+}
+
 /* Car temp */
 .car-temp-grid {
   margin-top: 1rem;
@@ -1503,12 +1613,13 @@ code {
   background: radial-gradient(circle at 20% 0, rgba(59, 130, 246, 0.12), rgba(5, 9, 12, 0.92));
   border: 1px solid rgba(148, 163, 184, 0.25);
   border-radius: 0.9rem;
-  padding: 1rem;
-  box-shadow: 0 12px 26px rgba(0, 0, 0, 0.45);
+  padding: 1.1rem;
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.48);
   text-align: center;
+  backdrop-filter: blur(3px);
 }
 .car-temp-value {
-  font-size: 1.6rem;
+  font-size: 1.8rem;
   font-weight: 700;
   color: #fff7ec;
 }
