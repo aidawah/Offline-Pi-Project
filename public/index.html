@@ -99,24 +99,24 @@
 
       <!-- CAR TEMP VIEW -->
       <section id="view-car-temp" class="view hidden">
-        <div class="card bg-slate-900/70 border border-slate-800 rounded-xl shadow-lg">
-          <h1>Car Temperature &amp; Humidity</h1>
-          <p>Live DHT11 reading from the Pi (GPIO 4 by default). Celsius, Fahrenheit, and RH%.</p>
-          <div class="car-temp-grid">
+        <div class="bg-slate-900/70 border border-slate-800 rounded-xl shadow-lg p-6">
+          <h1 class="text-2xl font-bold mb-2">Car Temperature &amp; Humidity</h1>
+          <p class="text-slate-400 text-sm mb-6">Live DHT11 reading from the Pi (GPIO 4 by default). Celsius, Fahrenheit, and RH%.</p>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
             <div class="car-temp-card">
               <div class="car-temp-value" id="carTempC">--.-°C</div>
-              <div class="car-temp-sub">Temp (Celsius)</div>
+              <div class="relative z-10 mt-2 text-sm text-slate-400 uppercase tracking-widest font-medium">Temp (Celsius)</div>
             </div>
             <div class="car-temp-card">
               <div class="car-temp-value" id="carTempF">--.-°F</div>
-              <div class="car-temp-sub">Temp (Fahrenheit)</div>
+              <div class="relative z-10 mt-2 text-sm text-slate-400 uppercase tracking-widest font-medium">Temp (Fahrenheit)</div>
             </div>
             <div class="car-temp-card">
               <div class="car-temp-value" id="carHum">--.-%</div>
-              <div class="car-temp-sub">Relative Humidity</div>
+              <div class="relative z-10 mt-2 text-sm text-slate-400 uppercase tracking-widest font-medium">Relative Humidity</div>
             </div>
           </div>
-          <div class="car-temp-meta" id="carTempMeta">Waiting for sensor...</div>
+          <div class="mt-4 pt-4 border-t border-slate-700/50 text-sm text-slate-400 italic text-center" id="carTempMeta">Waiting for sensor...</div>
         </div>
       </section>
 
@@ -322,14 +322,14 @@
 
       <!-- SYSTEM VIEW -->
       <section id="view-system" class="view hidden">
-        <div class="card bg-slate-900/70 border border-slate-800 rounded-xl shadow-lg">
-          <h1>System Management</h1>
-          <p>
+        <div class="bg-slate-900/70 border border-slate-800 rounded-xl shadow-lg p-6">
+          <h1 class="text-2xl font-bold mb-2">System Management</h1>
+          <p class="text-slate-400 text-sm mb-6">
             A simple Pi dashboard: CPU temp, load, memory, and fan RPM if your hardware
             reports it.
           </p>
 
-          <div class="system-grid">
+          <div class="mt-6 grid grid-cols-1 lg:grid-cols-[2fr_1.5fr] gap-6">
             <!-- big center gauge -->
             <div class="center-panel">
               <div class="gauge-shell-main">
@@ -338,10 +338,10 @@
                   class="gauge-arc-fill"
                   data-gauge="cpu-main"
                 ></div>
-                <div class="gauge-core">
+                <div class="relative text-center z-10">
                   <div class="gauge-main-value" id="center-value">--</div>
-                  <div class="gauge-main-label">SYSTEM TEMP &deg;C</div>
-                  <div class="gauge-sub-row" id="center-sub">
+                  <div class="text-xs uppercase tracking-[0.2em] text-slate-400 mt-1 font-semibold">SYSTEM TEMP &deg;C</div>
+                  <div class="mt-2 text-xs text-slate-400 leading-relaxed" id="center-sub">
                     Waiting for data...
                   </div>
                 </div>
@@ -349,10 +349,10 @@
             </div>
 
             <!-- side mini gauges -->
-            <div class="side-panel">
+            <div class="grid grid-rows-4 gap-4">
               <!-- CPU LOAD -->
               <div class="mini-panel">
-                <div class="mini-gauge">
+                <div class="flex items-center gap-3.5">
                   <div class="mini-gauge-circle">
                     <div
                       class="mini-gauge-arc"
@@ -360,16 +360,16 @@
                     ></div>
                     <div class="mini-gauge-value" id="mini-cpu">--%</div>
                   </div>
-                  <div class="mini-gauge-text">
-                    <div class="mini-gauge-label">CPU LOAD</div>
-                    <div id="mini-cpu-sub">Waiting...</div>
+                  <div class="text-xs flex-1">
+                    <div class="text-slate-400 uppercase tracking-[0.12em] text-[0.68rem] font-semibold">CPU LOAD</div>
+                    <div class="text-slate-300 mt-0.5" id="mini-cpu-sub">Waiting...</div>
                   </div>
                 </div>
               </div>
 
               <!-- MEMORY -->
               <div class="mini-panel">
-                <div class="mini-gauge">
+                <div class="flex items-center gap-3.5">
                   <div class="mini-gauge-circle">
                     <div
                       class="mini-gauge-arc"
@@ -377,16 +377,16 @@
                     ></div>
                     <div class="mini-gauge-value" id="mini-ram">--%</div>
                   </div>
-                  <div class="mini-gauge-text">
-                    <div class="mini-gauge-label">MEMORY</div>
-                    <div id="mini-ram-sub">Waiting...</div>
+                  <div class="text-xs flex-1">
+                    <div class="text-slate-400 uppercase tracking-[0.12em] text-[0.68rem] font-semibold">MEMORY</div>
+                    <div class="text-slate-300 mt-0.5" id="mini-ram-sub">Waiting...</div>
                   </div>
                 </div>
               </div>
 
               <!-- FAN RPM -->
               <div class="mini-panel">
-                <div class="mini-gauge">
+                <div class="flex items-center gap-3.5">
                   <div class="mini-gauge-circle">
                     <div
                       class="mini-gauge-arc"
@@ -394,9 +394,9 @@
                     ></div>
                     <div class="mini-gauge-value" id="mini-fan">N/A</div>
                   </div>
-                  <div class="mini-gauge-text">
-                    <div class="mini-gauge-label">FAN SPEED</div>
-                    <div id="mini-fan-sub">
+                  <div class="text-xs flex-1">
+                    <div class="text-slate-400 uppercase tracking-[0.12em] text-[0.68rem] font-semibold">FAN SPEED</div>
+                    <div class="text-slate-300 mt-0.5" id="mini-fan-sub">
                       If your fan exposes RPM, it will show up here.
                     </div>
                   </div>
@@ -405,7 +405,7 @@
 
               <!-- DISK -->
               <div class="mini-panel">
-                <div class="mini-gauge">
+                <div class="flex items-center gap-3.5">
                   <div class="mini-gauge-circle">
                     <div
                       class="mini-gauge-arc"
@@ -413,9 +413,9 @@
                     ></div>
                     <div class="mini-gauge-value" id="mini-disk">--%</div>
                   </div>
-                  <div class="mini-gauge-text">
-                    <div class="mini-gauge-label">DISK</div>
-                    <div id="mini-disk-sub">Waiting...</div>
+                  <div class="text-xs flex-1">
+                    <div class="text-slate-400 uppercase tracking-[0.12em] text-[0.68rem] font-semibold">DISK</div>
+                    <div class="text-slate-300 mt-0.5" id="mini-disk-sub">Waiting...</div>
                   </div>
                 </div>
               </div>
@@ -423,82 +423,82 @@
           </div>
 
           <!-- reboot -->
-          <div class="reboot-row">
-            <button class="reboot-btn" id="rebootBtn">
+          <div class="mt-6 flex flex-wrap gap-3 justify-between items-center">
+            <button class="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-b from-red-500 to-red-700 border border-red-500 text-red-50 font-bold text-sm uppercase tracking-wider shadow-[0_12px_28px_rgba(248,113,113,0.38)] hover:shadow-[0_16px_32px_rgba(248,113,113,0.45)] disabled:opacity-50 disabled:cursor-wait transition-all" id="rebootBtn">
               <span>&#8635;</span>
               <span>Reboot Device</span>
             </button>
-            <div class="reboot-note">
+            <div class="text-xs text-slate-400 max-w-md">
               Sends a safe reboot to the Pi. The hotspot and this dashboard will
               come back after a short pause.
             </div>
           </div>
-          <div class="status" id="status"></div>
+          <div class="mt-3 text-xs text-slate-400" id="status"></div>
         </div>
       </section>
 
       <!-- WEATHER VIEW -->
       <section id="view-weather" class="view hidden">
-        <div class="card bg-slate-900/70 border border-slate-800 rounded-xl shadow-lg">
-          <div class="weather-hero">
+        <div class="bg-slate-900/70 border border-slate-800 rounded-xl shadow-lg p-6">
+          <div class="flex justify-between items-center gap-4 flex-wrap mb-6">
             <div>
-              <h1>7-Day Forecast</h1>
-              <p>
+              <h1 class="text-2xl font-bold mb-1">7-Day Forecast</h1>
+              <p class="text-slate-400 text-sm">
                 Seven days in plain English, temps in Fahrenheit. Set
-                <code>WEATHER_LAT</code> and <code>WEATHER_LON</code> to match your spot.
+                <code class="bg-slate-950 px-1.5 py-0.5 rounded text-xs">WEATHER_LAT</code> and <code class="bg-slate-950 px-1.5 py-0.5 rounded text-xs">WEATHER_LON</code> to match your spot.
               </p>
             </div>
-            <div class="weather-meta">
-              <div class="weather-pill" id="weatherLocation">Loading location...</div>
-              <button class="weather-refresh-btn" id="weatherRefreshBtn" title="Refresh forecast">
+            <div class="flex items-center gap-2">
+              <div class="px-4 py-2 rounded-full bg-gradient-to-r from-cyan-500 to-purple-600 text-sky-50 border border-blue-500/50 shadow-[0_10px_28px_rgba(59,130,246,0.35)] text-sm font-semibold tracking-wide animate-weather-pulse" id="weatherLocation">Loading location...</div>
+              <button class="w-10 h-10 rounded-full border border-slate-600 bg-slate-900/90 text-slate-100 hover:border-accent hover:bg-cyan-500/10 hover:rotate-90 transition-all duration-200 flex items-center justify-center text-lg" id="weatherRefreshBtn" title="Refresh forecast">
                 &#x21bb;
               </button>
             </div>
           </div>
 
-          <div class="weather-controls">
-            <div class="weather-inputs">
+          <div class="mt-4 grid gap-2">
+            <div class="flex flex-wrap gap-2">
               <input
-                class="weather-input"
+                class="flex-1 min-w-[180px] rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-slate-100 text-sm focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent"
                 id="weatherNameInput"
                 type="text"
                 maxlength="50"
                 placeholder="Location name (optional)"
               />
               <input
-                class="weather-input"
+                class="flex-1 min-w-[140px] rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-slate-100 text-sm focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent"
                 id="weatherLatInput"
                 type="number"
                 step="0.0001"
                 placeholder="Latitude"
               />
               <input
-                class="weather-input"
+                class="flex-1 min-w-[140px] rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-slate-100 text-sm focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent"
                 id="weatherLonInput"
                 type="number"
                 step="0.0001"
                 placeholder="Longitude"
               />
             </div>
-            <div class="weather-actions">
-              <button class="map-btn" id="weatherSaveBtn">Use this location</button>
-              <button class="map-btn subtle" id="weatherDefaultBtn">Use default (Denver)</button>
-              <button class="map-btn subtle" id="weatherSavedBtn">Use saved</button>
+            <div class="flex flex-wrap gap-2">
+              <button class="px-4 py-2 rounded-lg bg-gradient-to-b from-slate-800 to-slate-900 border border-cyan-400/70 text-slate-100 font-semibold text-sm uppercase tracking-wider shadow-[0_12px_28px_rgba(34,211,238,0.26)] hover:border-cyan-400 hover:shadow-[0_12px_28px_rgba(34,211,238,0.28)] transition-all" id="weatherSaveBtn">Use this location</button>
+              <button class="px-4 py-2 rounded-lg bg-slate-600/20 border border-slate-600 text-slate-300 font-semibold text-sm uppercase tracking-wider hover:border-cyan-400/70 transition-all" id="weatherDefaultBtn">Use default (Denver)</button>
+              <button class="px-4 py-2 rounded-lg bg-slate-600/20 border border-slate-600 text-slate-300 font-semibold text-sm uppercase tracking-wider hover:border-cyan-400/70 transition-all" id="weatherSavedBtn">Use saved</button>
             </div>
           </div>
 
-          <div class="weather-grid" id="weatherGrid"></div>
-          <div class="weather-detail-overlay" id="weatherDetail">
-            <div class="weather-detail-card" id="weatherDetailCard">
-              <button class="weather-detail-close" id="detailClose">X</button>
-              <div class="weather-label" id="detailDate">Date</div>
-              <div class="weather-temp" id="detailTemp">-- / --</div>
-              <div class="weather-sub" id="detailSummary">Summary</div>
-              <div class="weather-prob" id="detailPrecip">Precip</div>
-              <div class="detail-grid" id="detailGrid"></div>
+          <div class="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" id="weatherGrid"></div>
+          <div class="weather-detail-overlay fixed inset-0 bg-slate-950/70 backdrop-blur-md hidden items-center justify-center p-4 z-30" id="weatherDetail">
+            <div class="max-w-md w-full rounded-2xl p-5 bg-gradient-to-br from-slate-800 to-slate-950 border border-blue-500/40 shadow-[0_24px_52px_rgba(0,0,0,0.6)] relative" id="weatherDetailCard">
+              <button class="absolute top-3 right-3 rounded-full px-2.5 py-1 bg-slate-600/20 text-slate-100 hover:bg-slate-600/40 transition-colors" id="detailClose">X</button>
+              <div class="text-xs font-semibold uppercase tracking-widest text-slate-400 bg-blue-500/10 px-2 py-1 rounded border border-blue-500/20 inline-block" id="detailDate">Date</div>
+              <div class="weather-temp mt-2" id="detailTemp">-- / --</div>
+              <div class="mt-2 text-sm text-blue-300 font-medium" id="detailSummary">Summary</div>
+              <div class="mt-3 text-sm text-blue-300 flex items-center gap-1.5" id="detailPrecip"><span>💧</span><span>Precip</span></div>
+              <div class="mt-4 grid grid-cols-2 gap-3" id="detailGrid"></div>
             </div>
           </div>
-          <div class="status" id="weatherStatus"></div>
+          <div class="mt-3 text-xs text-slate-400" id="weatherStatus"></div>
         </div>
       </section>
 

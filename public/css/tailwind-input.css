@@ -1,3 +1,256 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer components {
+  /* Car Temp Components */
+  .car-temp-card {
+    @apply relative overflow-hidden text-center;
+    @apply rounded-xl p-6 backdrop-blur-lg;
+    @apply border shadow-[0_14px_30px_rgba(0,0,0,0.48),0_0_40px_rgba(59,130,246,0.15)];
+    @apply transition-all duration-300;
+    border-color: rgba(59, 130, 246, 0.35);
+    background: linear-gradient(to bottom right, rgba(59, 130, 246, 0.18), rgba(2, 6, 23, 0.92));
+    animation: fadeInUp 0.6s ease-out, cardFloat 4s ease-in-out infinite;
+  }
+
+  .car-temp-card:nth-child(1) {
+    animation-delay: 0s, 0s;
+  }
+
+  .car-temp-card:nth-child(2) {
+    animation-delay: 0.2s, 0.5s;
+  }
+
+  .car-temp-card:nth-child(3) {
+    animation-delay: 0.4s, 1s;
+  }
+
+  .car-temp-card::before {
+    content: "";
+    @apply absolute -top-1/2 -left-1/2 w-[200%] h-[200%];
+    @apply animate-rotate-slow pointer-events-none;
+    background: radial-gradient(circle, rgba(59, 130, 246, 0.1) 0%, transparent 70%);
+  }
+
+  .car-temp-card:hover {
+    @apply -translate-y-1.5;
+    @apply shadow-[0_20px_40px_rgba(0,0,0,0.55),0_0_60px_rgba(59,130,246,0.3)];
+    border-color: rgba(59, 130, 246, 0.6);
+  }
+
+  .car-temp-value {
+    @apply relative z-10 text-4xl font-bold tracking-wide;
+    @apply bg-gradient-to-br from-blue-400 to-blue-300;
+    @apply bg-clip-text text-transparent;
+    @apply animate-temp-pulse;
+    filter: drop-shadow(0 2px 4px rgba(59, 130, 246, 0.5));
+  }
+
+  /* Weather Station Components */
+  .weather-day {
+    @apply relative p-5 rounded-xl cursor-pointer overflow-hidden;
+    @apply border border-blue-500/40;
+    @apply shadow-[0_12px_30px_rgba(0,0,0,0.55),0_0_20px_rgba(59,130,246,0.15)];
+    @apply transition-all duration-300;
+    @apply animate-fade-in-up;
+    background:
+      radial-gradient(circle at 30% 0%, rgba(59, 130, 246, 0.15), transparent 60%),
+      radial-gradient(circle at 70% 100%, rgba(124, 58, 237, 0.1), transparent 60%),
+      linear-gradient(135deg, #0b1224, #050915);
+  }
+
+  .weather-day:nth-child(1) { animation-delay: 0s; }
+  .weather-day:nth-child(2) { animation-delay: 0.1s; }
+  .weather-day:nth-child(3) { animation-delay: 0.2s; }
+  .weather-day:nth-child(4) { animation-delay: 0.3s; }
+  .weather-day:nth-child(5) { animation-delay: 0.4s; }
+  .weather-day:nth-child(6) { animation-delay: 0.5s; }
+  .weather-day:nth-child(7) { animation-delay: 0.6s; }
+
+  .weather-day::before {
+    content: "";
+    @apply absolute inset-[-30%] pointer-events-none opacity-0;
+    @apply transition-opacity duration-300;
+    background: radial-gradient(circle at 100% 0, rgba(34, 211, 238, 0.15), transparent);
+  }
+
+  .weather-day:hover {
+    @apply -translate-y-1.5 scale-[1.02];
+    @apply shadow-[0_16px_40px_rgba(0,0,0,0.6),0_0_50px_rgba(59,130,246,0.3)];
+    border-color: rgba(34, 211, 238, 0.8);
+  }
+
+  .weather-day:hover::before {
+    @apply opacity-100;
+  }
+
+  .weather-day::after {
+    content: "";
+    @apply absolute top-0 -left-full w-full h-full;
+    @apply transition-[left] duration-500;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.08), transparent);
+  }
+
+  .weather-day:hover::after {
+    @apply left-full;
+  }
+
+  .weather-icon {
+    @apply text-4xl animate-icon-bounce;
+    filter: drop-shadow(0 2px 8px rgba(59, 130, 246, 0.5));
+  }
+
+  .weather-temp {
+    @apply relative z-10 mt-2 text-2xl font-bold tracking-tight;
+    @apply bg-gradient-to-br from-blue-400 to-purple-400;
+    @apply bg-clip-text text-transparent;
+    @apply animate-data-flicker;
+    filter: drop-shadow(0 2px 4px rgba(59, 130, 246, 0.3));
+  }
+
+  /* System Gauge Components */
+  .gauge-shell-main {
+    @apply w-[280px] h-[280px] mx-auto rounded-full relative;
+    @apply grid place-items-center animate-pulse-glow;
+    @apply border-2 border-cyan-400/20;
+    background:
+      radial-gradient(circle at 50% 20%, rgba(34, 211, 238, 0.12), transparent 60%),
+      radial-gradient(circle at 50% 50%, #0a0e1c, #020617);
+    box-shadow:
+      0 14px 30px rgba(0, 0, 0, 0.5),
+      0 0 60px rgba(59, 130, 246, 0.3),
+      inset 0 2px 4px rgba(255, 255, 255, 0.1),
+      inset 0 -2px 8px rgba(0, 0, 0, 0.5);
+  }
+
+  .gauge-shell-main::after {
+    content: "";
+    @apply absolute inset-2 rounded-full pointer-events-none;
+    @apply border border-cyan-400/10;
+  }
+
+  .gauge-arc {
+    @apply absolute inset-0 rounded-full;
+    background: conic-gradient(
+      from -90deg,
+      rgba(15, 23, 42, 0.8) 0deg,
+      rgba(30, 41, 59, 0.5) 180deg,
+      rgba(15, 23, 42, 0.8) 360deg
+    );
+    mask: radial-gradient(farthest-side, transparent 58%, #000 60%);
+  }
+
+  .gauge-arc-fill {
+    @apply absolute inset-0 rounded-full;
+    @apply transition-all duration-[800ms];
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    background: conic-gradient(
+      from -90deg,
+      var(--accent-color, #f97316) calc(var(--value, 0) * 1%),
+      transparent 0
+    );
+    mask: radial-gradient(farthest-side, transparent 58%, #000 60%);
+    filter:
+      drop-shadow(0 0 12px rgba(56, 189, 248, 0.7))
+      drop-shadow(0 0 24px rgba(56, 189, 248, 0.4));
+  }
+
+  .gauge-main-value {
+    @apply text-5xl font-bold tracking-wider;
+    @apply bg-gradient-to-br from-blue-400 to-emerald-400;
+    @apply bg-clip-text text-transparent;
+    @apply animate-digit-roll;
+    filter: drop-shadow(0 2px 8px rgba(59, 130, 246, 0.5));
+  }
+
+  .mini-gauge-circle {
+    @apply w-[90px] h-[90px] rounded-full relative;
+    @apply grid place-items-center overflow-hidden;
+    @apply animate-pulse-glow-mini;
+    @apply border-[1.5px] border-purple-500/20;
+    background:
+      radial-gradient(circle at 30% 0, rgba(168, 85, 247, 0.15), transparent 60%),
+      radial-gradient(circle at 50% 50%, #0f172a, #020617);
+    box-shadow:
+      0 8px 16px rgba(0, 0, 0, 0.4),
+      0 0 30px rgba(168, 85, 247, 0.2),
+      inset 0 1px 2px rgba(255, 255, 255, 0.1),
+      inset 0 -1px 4px rgba(0, 0, 0, 0.5);
+  }
+
+  .mini-gauge-circle::after {
+    content: "";
+    @apply absolute inset-1.5 rounded-full pointer-events-none;
+    @apply border border-purple-500/10;
+  }
+
+  .mini-gauge-arc {
+    @apply absolute inset-0 rounded-full;
+    @apply transition-all duration-[800ms];
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    background: conic-gradient(
+      from -90deg,
+      var(--accent-color, #7dd3a5) calc(var(--value, 0) * 1%),
+      transparent 0
+    );
+    mask: radial-gradient(farthest-side, transparent 56%, #000 58%);
+    filter:
+      drop-shadow(0 0 10px rgba(168, 85, 247, 0.8))
+      drop-shadow(0 0 20px rgba(168, 85, 247, 0.4));
+  }
+
+  .mini-gauge-value {
+    @apply relative text-xl font-bold;
+    @apply bg-gradient-to-br from-purple-400 to-cyan-300;
+    @apply bg-clip-text text-transparent;
+    @apply animate-digit-roll;
+    filter: drop-shadow(0 1px 4px rgba(168, 85, 247, 0.5));
+  }
+
+  /* Panel Backgrounds */
+  .center-panel {
+    @apply relative rounded-2xl p-5 overflow-hidden;
+    @apply border border-cyan-400/40;
+    background:
+      radial-gradient(circle at top, rgba(56, 189, 248, 0.08), transparent 50%),
+      radial-gradient(circle at bottom, rgba(168, 85, 247, 0.08), transparent 50%),
+      linear-gradient(135deg, #020617, #000814);
+    box-shadow:
+      0 0 30px rgba(56, 189, 248, 0.3),
+      0 0 80px rgba(37, 99, 235, 0.25),
+      inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  }
+
+  .center-panel::before {
+    content: "";
+    @apply absolute inset-[-40%] opacity-75 pointer-events-none;
+    @apply animate-rotate-slower;
+    background:
+      radial-gradient(circle at 0 0, rgba(56, 189, 248, 0.2), transparent),
+      radial-gradient(circle at 100% 0, rgba(168, 85, 247, 0.2), transparent);
+  }
+
+  .mini-panel {
+    @apply relative rounded-2xl p-4 overflow-hidden;
+    @apply border border-purple-500/35;
+    background:
+      radial-gradient(circle at top, rgba(168, 85, 247, 0.12), transparent 60%),
+      linear-gradient(135deg, #020617, #000814);
+    box-shadow:
+      0 0 24px rgba(168, 85, 247, 0.25),
+      inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  }
+
+  .mini-panel::before {
+    content: "";
+    @apply absolute inset-[-40%] opacity-60 pointer-events-none;
+    @apply animate-rotate-slow;
+    background: radial-gradient(circle at 0 0, rgba(168, 85, 247, 0.25), transparent);
+  }
+
+  /* Weather detail overlay active state */
+  .weather-detail-overlay.active {
+    @apply flex;
+  }
+}

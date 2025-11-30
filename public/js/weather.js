@@ -159,10 +159,10 @@ export function initWeather(isActive) {
     detailGrid.innerHTML = "";
     detailItems.forEach((item) => {
       const div = document.createElement("div");
-      div.className = "detail-item";
+      div.className = "p-3 rounded-xl bg-slate-800/60 border border-slate-600/30";
       div.innerHTML = `
-        <div class="detail-label">${item.label}</div>
-        <div class="detail-value">${item.value}</div>
+        <div class="text-slate-400 text-xs tracking-wider uppercase">${item.label}</div>
+        <div class="mt-1 text-base font-semibold text-slate-100">${item.value}</div>
       `;
       detailGrid.appendChild(div);
     });
@@ -189,13 +189,13 @@ export function initWeather(isActive) {
       const card = document.createElement("div");
       card.className = "weather-day";
       card.innerHTML = `
-        <div class="weather-top">
-          <div class="weather-label">${formatDateLabel(day.date)}</div>
-          <div class="weather-icon text-2xl">${iconMap[meta.icon] || "⛅"}</div>
+        <div class="relative z-10 flex items-center justify-between gap-2 mb-3">
+          <div class="text-xs font-semibold uppercase tracking-widest text-slate-400 bg-blue-500/10 px-2 py-1 rounded border border-blue-500/20">${formatDateLabel(day.date)}</div>
+          <div class="weather-icon">${iconMap[meta.icon] || "⛅"}</div>
         </div>
         <div class="weather-temp">${hi} / ${lo}</div>
-        <div class="weather-sub">${meta.label}</div>
-        <div class="weather-prob">${precipText}</div>
+        <div class="relative z-10 mt-2 text-sm text-blue-300 font-medium">${meta.label}</div>
+        <div class="relative z-10 mt-3 pt-3 border-t border-slate-600/30 text-xs text-blue-300 flex items-center gap-1.5"><span>💧</span><span>${precipText}</span></div>
       `;
       card.addEventListener("click", () => showWeatherDetail(days[idx]));
       weatherGrid.appendChild(card);
