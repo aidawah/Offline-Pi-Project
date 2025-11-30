@@ -41,16 +41,23 @@ export function initMap() {
 
   const tileConfig = (window.PICO_CONFIG && window.PICO_CONFIG.tiles) || {};
   const defaultMax = Number.isFinite(tileConfig.maxZoom) ? tileConfig.maxZoom : 14;
-  const streetUrl =
-    tileConfig.url ||
-    "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
-  const rewrittenStreetUrl =
-    streetUrl && streetUrl.includes("127.0.0.1") && typeof window !== "undefined"
-      ? streetUrl.replace("127.0.0.1", window.location.hostname)
-      : streetUrl;
-  console.log("[map] tileConfig url", streetUrl, "rewritten", rewrittenStreetUrl);
+  const normalizeTileUrl = (url) => {
+    if (!url) return url;
+    let out = url;
+    // force known working raster style
+    out = out.replace("styles/bright/", "styles/basic-preview/");
+    // swap localhost to current host for hotspot clients
+    if (typeof window !== "undefined" && out.includes("127.0.0.1")) {
+      out = out.replace("127.0.0.1", window.location.hostname);
+    }
+    return out;
+  };
+  const streetUrl = normalizeTileUrl(
+    tileConfig.url || "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+  );
+  console.log("[map] tileConfig url", tileConfig.url, "normalized", streetUrl);
   const streetSource = {
-    url: rewrittenStreetUrl,
+    url: streetUrl,
     attribution: tileConfig.attribution || "(c) OpenStreetMap contributors",
     maxZoom: defaultMax,
     maxNativeZoom: Number.isFinite(tileConfig.maxNativeZoom) ? tileConfig.maxNativeZoom : defaultMax,
