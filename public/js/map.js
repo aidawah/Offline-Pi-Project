@@ -37,6 +37,7 @@ export function initMap() {
   const campLonInput = document.getElementById("mapLonInput");
   const campSaveBtn = document.getElementById("mapSaveCampBtn");
   const campClearBtn = document.getElementById("mapClearCampBtn");
+  const campSetCenterBtn = document.getElementById("mapSetCenterBtn");
   const campStatusEl = document.getElementById("mapCampStatus");
   const zoomInBtn = document.getElementById("zoomInBtn");
   const zoomOutBtn = document.getElementById("zoomOutBtn");
@@ -473,14 +474,41 @@ export function initMap() {
           (pos) => {
             if (geoTimeout) clearTimeout(geoTimeout);
             const accuracy = pos.coords.accuracy;
+
+            // Log detailed position info for debugging
+            console.log("[map] Geolocation position:", {
+              latitude: pos.coords.latitude,
+              longitude: pos.coords.longitude,
+              accuracy: accuracy,
+              altitude: pos.coords.altitude,
+              altitudeAccuracy: pos.coords.altitudeAccuracy,
+              heading: pos.coords.heading,
+              speed: pos.coords.speed,
+              timestamp: new Date(pos.timestamp).toISOString()
+            });
+
             let accuracyLabel = "";
-            if (accuracy < 50) {
-              accuracyLabel = " (±" + Math.round(accuracy) + "m - high accuracy)";
-            } else if (accuracy < 200) {
-              accuracyLabel = " (±" + Math.round(accuracy) + "m - medium accuracy)";
+            let method = "";
+
+            // Determine likely positioning method based on accuracy
+            if (pos.coords.altitude != null && accuracy < 50) {
+              method = "GPS";
+              accuracyLabel = " (±" + Math.round(accuracy) + "m - GPS)";
+            } else if (accuracy < 100) {
+              method = "WiFi/GPS";
+              accuracyLabel = " (±" + Math.round(accuracy) + "m - WiFi/GPS)";
+            } else if (accuracy < 1000) {
+              method = "WiFi/Cell";
+              accuracyLabel = " (±" + Math.round(accuracy) + "m - WiFi/Cell tower)";
             } else {
-              accuracyLabel = " (±" + Math.round(accuracy) + "m - low accuracy)";
+              method = "IP/WiFi";
+              accuracyLabel = " (±" + Math.round(accuracy) + "m - IP/WiFi, very low accuracy)";
             }
+
+            if (mapMetaEl) {
+              mapMetaEl.textContent = "Location via " + method + " - Accuracy: ±" + Math.round(accuracy) + "m";
+            }
+
             placeMarker([pos.coords.latitude, pos.coords.longitude], "Your location" + accuracyLabel);
           },
           async (err) => {
@@ -515,6 +543,14 @@ export function initMap() {
           }
         });
       }
+    });
+  }
+
+  if (campSetCenterBtn) {
+    campSetCenterBtn.addEventListener("click", () => {
+      ensureColoradoMap();
+      syncInputsToCenter();
+      updateCampStatus("Coordinates set to current map center. Click 'Save camp location' to save.");
     });
   }
 

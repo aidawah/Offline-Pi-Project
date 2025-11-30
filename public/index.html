@@ -272,6 +272,10 @@
             </div>
           </div>
 
+          <div class="px-4 py-3 mb-4 rounded-lg bg-blue-500/10 border border-blue-500/30 text-sm text-blue-300">
+            <strong>💡 Location accuracy tip:</strong> For GPS precision, open this page on your phone/tablet. Laptops and the Pi use WiFi/IP positioning (often miles off). Or manually enter your exact coordinates below.
+          </div>
+
           <div class="map-save">
             <div class="map-save-inputs">
               <input
@@ -297,6 +301,7 @@
               />
             </div>
             <div class="map-save-actions">
+              <button class="map-btn subtle" id="mapSetCenterBtn">📍 Use map center</button>
               <button class="map-btn" id="mapSaveCampBtn">Save camp location</button>
               <button class="map-btn subtle" id="mapClearCampBtn">Remove saved camp</button>
             </div>
