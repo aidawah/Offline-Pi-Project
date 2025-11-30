@@ -4,12 +4,16 @@ After=network-online.target
 Wants=network-online.target
 
 [Service]
-WorkingDirectory=/home/admin/pi-control
+User=admin
+WorkingDirectory=/home/admin/pi-control/Offline-Pi-Project
+
 ExecStart=/usr/bin/npm start
 Restart=always
 RestartSec=5
-User=admin
+
 Environment=NODE_ENV=production
+Environment=DHT_PIN=21
+Environment=DHT_TYPE=11
 Environment=MAP_TILE_URL=http://127.0.0.1:8090/styles/bright/{z}/{x}/{y}.png
 Environment=MAP_TILE_ATTRIB=(local Colorado tiles)
 Environment=MAP_TILE_FALLBACK_URL=https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png
