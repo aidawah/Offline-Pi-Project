@@ -38,6 +38,8 @@ export function initMap() {
   const campSaveBtn = document.getElementById("mapSaveCampBtn");
   const campClearBtn = document.getElementById("mapClearCampBtn");
   const campStatusEl = document.getElementById("mapCampStatus");
+  const zoomInBtn = document.getElementById("zoomInBtn");
+  const zoomOutBtn = document.getElementById("zoomOutBtn");
 
   const tileConfig = (window.PICO_CONFIG && window.PICO_CONFIG.tiles) || {};
   const defaultMax = Number.isFinite(tileConfig.maxZoom) ? tileConfig.maxZoom : 14;
@@ -540,6 +542,19 @@ export function initMap() {
     refreshMapSize();
     setTimeout(refreshMapSize, 75);
     updateMapMeta("Centered on Colorado");
+  }
+
+  if (zoomInBtn) {
+    zoomInBtn.addEventListener("click", () => {
+      const map = ensureColoradoMap();
+      if (map) map.zoomIn();
+    });
+  }
+  if (zoomOutBtn) {
+    zoomOutBtn.addEventListener("click", () => {
+      const map = ensureColoradoMap();
+      if (map) map.zoomOut();
+    });
   }
 
   return {

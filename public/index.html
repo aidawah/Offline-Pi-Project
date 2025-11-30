@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="stylesheet" href="/vendor/leaflet/leaflet.css" />
     <link rel="stylesheet" href="/css/tailwind.css" />
+    <link rel="stylesheet" href="/css/main.css" />
     <script src="/config.js"></script>
   </head>
   <body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col">
@@ -295,7 +296,12 @@
           </div>
 
           <div class="map-layout grid md:grid-cols-[1.6fr_1fr] gap-4 mt-4">
-            <div class="map-canvas h-[520px] min-h-[420px] rounded-xl border border-slate-800 overflow-hidden" id="coloradoMap"></div>
+            <div class="map-canvas relative h-[520px] min-h-[420px] rounded-xl border border-slate-800 overflow-hidden" id="coloradoMap">
+              <div class="absolute top-3 right-3 z-[500] flex flex-col gap-2">
+                <button id="zoomInBtn" class="px-3 py-2 rounded-md bg-slate-900/80 border border-slate-700 text-slate-100 shadow">+</button>
+                <button id="zoomOutBtn" class="px-3 py-2 rounded-md bg-slate-900/80 border border-slate-700 text-slate-100 shadow">−</button>
+              </div>
+            </div>
             <div class="map-side rounded-xl border border-slate-800 p-4 bg-slate-900/60">
               <div>
                 <div class="map-side-title">Quick jumps</div>
