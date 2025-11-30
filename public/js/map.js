@@ -40,19 +40,18 @@ export function initMap() {
   const campStatusEl = document.getElementById("mapCampStatus");
 
   const tileConfig = (window.PICO_CONFIG && window.PICO_CONFIG.tiles) || {};
+  const defaultMax = Number.isFinite(tileConfig.maxZoom) ? tileConfig.maxZoom : 14;
   const streetSource = {
     url: tileConfig.url || "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
     attribution: tileConfig.attribution || "(c) OpenStreetMap contributors",
-    maxZoom: tileConfig.maxZoom || 19,
-    maxNativeZoom: tileConfig.maxNativeZoom || tileConfig.maxZoom || 19,
+    maxZoom: defaultMax,
+    maxNativeZoom: Number.isFinite(tileConfig.maxNativeZoom) ? tileConfig.maxNativeZoom : defaultMax,
   };
-  const fallbackSource = tileConfig.fallbackUrl
-    ? {
-        url: tileConfig.fallbackUrl,
-        attribution: tileConfig.fallbackAttribution || "(c) OpenStreetMap contributors",
-        maxZoom: tileConfig.maxZoom || 19,
-      }
-    : null;
+  const fallbackSource = {
+    url: tileConfig.fallbackUrl || "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+    attribution: tileConfig.fallbackAttribution || "(c) OpenStreetMap contributors",
+    maxZoom: defaultMax,
+  };
 
   let coMap = null;
   let tileLayers = null;
@@ -224,10 +223,6 @@ export function initMap() {
         maxNativeZoom: streetSource.maxNativeZoom,
         attribution: streetSource.attribution,
       }),
-      topo: L.tileLayer("https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png", {
-        maxZoom: 16,
-        attribution: "(c) OpenTopoMap, OSM contributors",
-      }),
     };
 
     coMap = L.map("coloradoMap", {
@@ -309,20 +304,10 @@ export function initMap() {
 
   function toggleLayer() {
     if (!coMap || !tileLayers) return;
-    const next = activeLayer === "streets" ? "topo" : "streets";
-    coMap.removeLayer(tileLayers[activeLayer]);
-    tileLayers[next].addTo(coMap);
-    activeLayer = next;
-    if (mapLayerBtn) {
-      mapLayerBtn.textContent = next === "topo" ? "Street layer" : "Switch layer";
-    }
     if (mapTileNoteEl) {
-      mapTileNoteEl.textContent =
-        next === "topo"
-          ? "Topo / elevation shading for hiking and drives."
-          : "Street detail for navigation.";
+      mapTileNoteEl.textContent = "Offline tiles in use (MAP_TILE_URL). Fallback: OpenStreetMap.";
     }
-    updateMapMeta("Layer: " + (next === "topo" ? "Topo" : "Street"));
+    updateMapMeta("Layer: Street");
   }
 
   function resetMapView() {
@@ -402,7 +387,9 @@ export function initMap() {
   syncInputsToCenter();
 
   if (mapLayerBtn) {
-    mapLayerBtn.addEventListener("click", toggleLayer);
+    mapLayerBtn.textContent = "Tiles: Offline";
+    mapLayerBtn.disabled = true;
+    mapLayerBtn.classList.add("disabled");
   }
   if (mapResetBtn) {
     mapResetBtn.addEventListener("click", resetMapView);
