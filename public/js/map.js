@@ -527,6 +527,7 @@ export function initMap() {
   function onShow() {
     ensureColoradoMap();
     refreshMapSize();
+    setTimeout(refreshMapSize, 75);
     updateMapMeta("Centered on Colorado");
   }
 
