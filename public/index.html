@@ -288,7 +288,6 @@
             </div>
             <div class="map-actions">
               <button class="map-btn" id="mapLocateBtn">Use my location</button>
-              <button class="map-btn subtle" id="mapUseCampBtn">Use saved spot</button>
               <button class="map-btn" id="mapResetBtn">Reset view</button>
               <button class="map-btn" id="mapLayerBtn">Switch layer</button>
             </div>
@@ -324,8 +323,8 @@
             </div>
             <div class="map-save-actions">
               <button class="map-btn subtle" id="mapSetCenterBtn">📍 Use map center</button>
-              <button class="map-btn" id="mapSaveCampBtn">Save camp location</button>
-              <button class="map-btn subtle" id="mapClearCampBtn">Remove saved camp</button>
+              <button class="map-btn" id="mapSaveCampBtn">💾 Save location</button>
+              <button class="map-btn subtle" id="mapClearCampBtn">Clear inputs</button>
             </div>
             <div class="map-meta" id="mapCampStatus">No saved camp location.</div>
           </div>
@@ -338,7 +337,16 @@
               </div>
             </div>
             <div class="map-side rounded-xl border border-slate-800 p-4 bg-slate-900/60">
-              <div>
+              <div class="mb-6">
+                <div class="flex items-center justify-between mb-3">
+                  <div class="map-side-title mb-0">📍 Saved Locations</div>
+                  <button id="clearAllSavedBtn" class="text-xs text-slate-400 hover:text-red-400 transition-colors hidden">Clear all</button>
+                </div>
+                <div id="savedLocationsList" class="space-y-2">
+                  <div class="text-xs text-slate-500 italic">No saved locations yet. Save your camping spots below!</div>
+                </div>
+              </div>
+              <div class="mb-6">
                 <div class="map-side-title">Quick jumps</div>
                 <div class="map-chip-wrap" id="mapQuickLinks"></div>
               </div>
