@@ -17,6 +17,15 @@ Offline-friendly Raspberry Pi car dashboard with hotspot access, system stats, n
 - For HTTPS: a TLS key/cert readable by the service user (defaults to `admin`)
 - Optional: local tileserver/MBTiles for offline Colorado maps
 
+## Quick update after git pull
+After pulling the latest changes, use the included update script:
+```bash
+cd ~/pi-control/Offline-Pi-Project
+git pull
+npm run update       # installs deps, rebuilds CSS, and restarts service
+```
+This single command handles all update tasks automatically.
+
 ## Quick start (manual)
 ```bash
 cd ~/pi-control
@@ -77,6 +86,17 @@ Or use `mbtileserver`:
 docker run --rm -it -v $PWD/mapdata:/data -p 8090:8000 ghcr.io/consbio/mbtileserver:latest /data
 ```
 Point `MAP_TILE_URL` at the served style/tiles. For plain raster folders, serve from `public/tiles/` and set `MAP_TILE_URL=/tiles/{z}/{x}/{y}.png`.
+
+## Mobile & Responsive Design
+The dashboard is fully responsive and mobile-friendly:
+- **Adaptive navigation**: Hamburger menu on mobile (< 1024px), full nav bar on desktop
+- **Touch-optimized**: All buttons and controls sized for touch input
+- **Responsive layouts**: Single column on mobile, multi-column grids on tablets/desktop
+- **Horizontal scroll tables**: Network clients table scrolls horizontally on small screens
+- **Optimized map**: Adjusts height for mobile (400px) vs desktop (520px)
+- **GPS on mobile**: For accurate location on the map, open the dashboard on your phone/tablet (uses actual GPS instead of WiFi/IP positioning)
+
+Best experience: Use your phone connected to the Pi's hotspot for true GPS positioning and touch-friendly controls.
 
 ## Using the dashboard
 - Home: CTA buttons to System/Map/Weather/Networking.

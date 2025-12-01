@@ -9,33 +9,55 @@
     <script src="/config.js"></script>
   </head>
   <body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col">
-    <header class="sticky top-0 z-10 backdrop-blur bg-slate-900/80 border-b border-slate-800">
-      <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
+    <header class="sticky top-0 z-20 backdrop-blur bg-slate-900/80 border-b border-slate-800">
+      <div class="max-w-6xl mx-auto px-3 sm:px-4 py-2 sm:py-3 flex items-center justify-between gap-2 sm:gap-3">
         <div class="flex items-center gap-2">
           <div class="h-3 w-3 rounded-full bg-emerald-400 shadow-md shadow-emerald-500/50"></div>
-          <span class="font-semibold text-lg">Pi Car Control</span>
+          <span class="font-semibold text-base sm:text-lg">Pi Car Control</span>
         </div>
-        <nav class="flex flex-wrap gap-2">
+
+        <!-- Mobile menu button -->
+        <button id="mobile-menu-btn" class="lg:hidden px-3 py-2 rounded-md border border-slate-700 text-slate-300 hover:text-cyan-400 hover:border-cyan-400 transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+          </svg>
+        </button>
+
+        <!-- Desktop nav -->
+        <nav class="hidden lg:flex flex-wrap gap-2">
           <button class="px-3 py-2 rounded-md border border-slate-700 text-sm nav-btn active" data-view="home">Home</button>
           <button class="px-3 py-2 rounded-md border border-slate-700 text-sm nav-btn" data-view="camera">Camera</button>
           <button class="px-3 py-2 rounded-md border border-slate-700 text-sm nav-btn" data-view="car-temp">Car Temp</button>
-          <button class="px-3 py-2 rounded-md border border-slate-700 text-sm nav-btn" data-view="map">Colorado Map</button>
+          <button class="px-3 py-2 rounded-md border border-slate-700 text-sm nav-btn" data-view="map">Map</button>
           <button class="px-3 py-2 rounded-md border border-slate-700 text-sm nav-btn" data-view="system">System</button>
           <button class="px-3 py-2 rounded-md border border-slate-700 text-sm nav-btn" data-view="weather">Weather</button>
-          <button class="px-3 py-2 rounded-md border border-slate-700 text-sm nav-btn" data-view="network">Networking</button>
+          <button class="px-3 py-2 rounded-md border border-slate-700 text-sm nav-btn" data-view="network">Network</button>
         </nav>
       </div>
+
+      <!-- Mobile nav dropdown -->
+      <nav id="mobile-menu" class="lg:hidden hidden bg-slate-900 border-t border-slate-800">
+        <div class="max-w-6xl mx-auto px-3 py-2 flex flex-col gap-1">
+          <button class="px-3 py-2.5 rounded-md border border-slate-700 text-sm text-left nav-btn active hover:bg-slate-800 transition-colors" data-view="home">🏠 Home</button>
+          <button class="px-3 py-2.5 rounded-md border border-slate-700 text-sm text-left nav-btn hover:bg-slate-800 transition-colors" data-view="camera">📷 Camera</button>
+          <button class="px-3 py-2.5 rounded-md border border-slate-700 text-sm text-left nav-btn hover:bg-slate-800 transition-colors" data-view="car-temp">🌡️ Car Temp</button>
+          <button class="px-3 py-2.5 rounded-md border border-slate-700 text-sm text-left nav-btn hover:bg-slate-800 transition-colors" data-view="map">🗺️ Map</button>
+          <button class="px-3 py-2.5 rounded-md border border-slate-700 text-sm text-left nav-btn hover:bg-slate-800 transition-colors" data-view="system">💻 System</button>
+          <button class="px-3 py-2.5 rounded-md border border-slate-700 text-sm text-left nav-btn hover:bg-slate-800 transition-colors" data-view="weather">⛅ Weather</button>
+          <button class="px-3 py-2.5 rounded-md border border-slate-700 text-sm text-left nav-btn hover:bg-slate-800 transition-colors" data-view="network">📡 Network</button>
+        </div>
+      </nav>
     </header>
 
-    <main class="max-w-6xl mx-auto px-4 py-6 w-full flex-1">
+    <main class="max-w-6xl mx-auto px-3 sm:px-4 py-4 sm:py-6 w-full flex-1">
       <!-- HOME VIEW -->
       <section id="view-home" class="view active">
-        <div class="grid gap-6">
+        <div class="grid gap-4 sm:gap-6">
           <div class="home-hero-card">
-            <div class="space-y-4">
+            <div class="space-y-3 sm:space-y-4">
               <span class="home-badge">Offline Pi dashboard</span>
-              <h1 class="text-3xl font-bold bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">Control the essentials without the clutter.</h1>
-              <p class="text-slate-300 text-base">
+              <h1 class="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">Control the essentials without the clutter.</h1>
+              <p class="text-slate-300 text-sm sm:text-base">
                 Jump straight to stats, the Colorado map, the forecast, or hotspot clients in two clicks.
               </p>
               <div class="flex flex-wrap gap-3">
@@ -272,8 +294,8 @@
             </div>
           </div>
 
-          <div class="px-4 py-3 mb-4 rounded-lg bg-blue-500/10 border border-blue-500/30 text-sm text-blue-300">
-            <strong>💡 Location accuracy tip:</strong> For GPS precision, open this page on your phone/tablet. Laptops and the Pi use WiFi/IP positioning (often miles off). Or manually enter your exact coordinates below.
+          <div class="px-3 sm:px-4 py-2.5 sm:py-3 mb-3 sm:mb-4 rounded-lg bg-blue-500/10 border border-blue-500/30 text-xs sm:text-sm text-blue-300">
+            <strong>💡 Tip:</strong> For GPS precision, open on your phone/tablet. Laptops use WiFi/IP positioning (often miles off). Or enter exact coordinates below.
           </div>
 
           <div class="map-save">
@@ -309,7 +331,7 @@
           </div>
 
           <div class="map-layout grid md:grid-cols-[1.6fr_1fr] gap-4 mt-4">
-            <div class="map-canvas relative h-[520px] min-h-[420px] rounded-xl border border-slate-800 overflow-hidden" id="coloradoMap">
+            <div class="map-canvas relative h-[400px] sm:h-[480px] md:h-[520px] rounded-xl border border-slate-800 overflow-hidden" id="coloradoMap">
               <div class="absolute top-3 right-3 z-[500] flex flex-col gap-2">
                 <button id="zoomInBtn" class="px-3 py-2 rounded-md bg-slate-900/80 border border-slate-700 text-slate-100 shadow">+</button>
                 <button id="zoomOutBtn" class="px-3 py-2 rounded-md bg-slate-900/80 border border-slate-700 text-slate-100 shadow">−</button>
@@ -557,16 +579,18 @@
             <code>wlan0</code> (10.42.x.x).
           </p>
 
-          <table class="clients-table" id="clientsTable">
-            <thead>
-              <tr>
-                <th>IP</th>
-                <th>MAC</th>
-                <th>Hostname</th>
-              </tr>
-            </thead>
-            <tbody id="clientsBody"></tbody>
-          </table>
+          <div class="overflow-x-auto -mx-3 sm:mx-0">
+            <table class="clients-table" id="clientsTable">
+              <thead>
+                <tr>
+                  <th>IP</th>
+                  <th>MAC</th>
+                  <th>Hostname</th>
+                </tr>
+              </thead>
+              <tbody id="clientsBody"></tbody>
+            </table>
+          </div>
           <div class="clients-empty" id="clientsEmpty">
             No hotspot clients detected yet. Connect your phone to
             <strong>PiCarCam</strong> to see it listed here.

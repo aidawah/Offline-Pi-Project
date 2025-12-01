@@ -47,3 +47,28 @@ system.refresh();
 network.refresh();
 camera.refresh();
 carTemp.refresh();
+
+// Mobile menu toggle
+const mobileMenuBtn = document.getElementById("mobile-menu-btn");
+const mobileMenu = document.getElementById("mobile-menu");
+
+if (mobileMenuBtn && mobileMenu) {
+  mobileMenuBtn.addEventListener("click", () => {
+    mobileMenu.classList.toggle("hidden");
+  });
+
+  // Close mobile menu when a nav button is clicked
+  const mobileNavBtns = mobileMenu.querySelectorAll(".nav-btn");
+  mobileNavBtns.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      mobileMenu.classList.add("hidden");
+    });
+  });
+
+  // Close mobile menu when clicking outside
+  document.addEventListener("click", (e) => {
+    if (!mobileMenuBtn.contains(e.target) && !mobileMenu.contains(e.target)) {
+      mobileMenu.classList.add("hidden");
+    }
+  });
+}
