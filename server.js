@@ -154,10 +154,81 @@ function readDiskUsage(mountPoint = "/") {
 }
 
 // Expose minimal frontend config (tile source)
+// ---- Local tile proxy ------------------------------------------------
+// MAP_TILE_URL points at the tileserver from the SERVER's perspective
+// (127.0.0.1:8090), but that URL is handed to the BROWSER, which resolves
+// 127.0.0.1 as itself. So offline tiles only ever loaded on the Pi, or when
+// port 8090 happened to be tunnelled -- everywhere else Leaflet silently
+// fell back to online OSM. Proxying through this process gives the browser a
+// same-origin relative path that works identically over the PiCarCam
+// hotspot, the tailnet, and an SSH tunnel.
+const TILE_PROXY_PATH = "/tiles/{z}/{x}/{y}.png";
+const TILE_TIMEOUT_MS = 5000;
+
+function isLoopbackTileUpstream(template) {
+  try {
+    const probe = new URL(String(template).replace(/\{[sxyz]\}/gi, "0"));
+    return ["127.0.0.1", "localhost", "::1", "0.0.0.0"].includes(probe.hostname);
+  } catch (err) {
+    return false;
+  }
+}
+
+// Only proxy a loopback upstream. If MAP_TILE_URL is ever pointed at a real
+// remote tile host, pass it straight through as before. MAP_TILE_PROXY=0 opts out.
+const TILE_PROXY_ENABLED =
+  process.env.MAP_TILE_PROXY !== "0" && isLoopbackTileUpstream(MAP_TILE_URL);
+
+app.get("/tiles/:z/:x/:y", (req, res) => {
+  if (!TILE_PROXY_ENABLED) return res.status(404).end();
+
+  const z = parseInt(req.params.z, 10);
+  const x = parseInt(req.params.x, 10);
+  const y = parseInt(String(req.params.y).replace(/\.png$/i, ""), 10);
+
+  // Reject anything that isn't a plain tile coordinate -- the upstream URL is
+  // built by substitution, so unvalidated input here is a request-forgery hole.
+  if (![z, x, y].every(Number.isInteger) || z < 0 || z > 22 || x < 0 || y < 0) {
+    return res.status(400).end();
+  }
+
+  const upstreamUrl = MAP_TILE_URL.replace(/\{z\}/g, String(z))
+    .replace(/\{x\}/g, String(x))
+    .replace(/\{y\}/g, String(y));
+
+  let target;
+  try {
+    target = new URL(upstreamUrl);
+  } catch (err) {
+    return res.status(500).end();
+  }
+
+  const client = target.protocol === "https:" ? https : http;
+  const upstreamReq = client.get(target, { timeout: TILE_TIMEOUT_MS }, (upRes) => {
+    if (upRes.statusCode !== 200) {
+      upRes.resume();
+      // Non-200 lets the client's existing fallback swap to online OSM.
+      return res.status(502).end();
+    }
+    res.setHeader("Content-Type", upRes.headers["content-type"] || "image/png");
+    if (upRes.headers["content-length"]) {
+      res.setHeader("Content-Length", upRes.headers["content-length"]);
+    }
+    res.setHeader("Cache-Control", "public, max-age=86400");
+    upRes.pipe(res);
+  });
+
+  upstreamReq.on("timeout", () => upstreamReq.destroy(new Error("tile timeout")));
+  upstreamReq.on("error", () => {
+    if (!res.headersSent) res.status(504).end();
+    else res.destroy();
+  });
+});
+
 app.get("/config.js", (req, res) => {
   const config = {
     tiles: {
-      url: MAP_TILE_URL,
+      url: TILE_PROXY_ENABLED ? TILE_PROXY_PATH : MAP_TILE_URL,
       attribution: MAP_TILE_ATTRIB,
       maxZoom: MAP_TILE_MAX_ZOOM,
       maxNativeZoom: MAP_TILE_MAX_NATIVE_ZOOM,

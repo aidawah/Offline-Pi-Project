@@ -7,6 +7,7 @@ Wants=network-online.target docker.service
 Type=simple
 User=admin
 WorkingDirectory=/home/admin/pi-control
+ExecStartPre=-/usr/bin/docker rm -f tileserver-gl
 ExecStart=/usr/bin/docker run --rm \
   -v /home/admin/pi-control/mapdata:/data \
   -p 8090:8080 \
